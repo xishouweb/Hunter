@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project-module
+  type="WEB"
+  name="Hunter"
+  id="myeclipse.1469516965783"
+  context-root="/Hunter"
+  j2ee-spec="5.0"
+  archive="Hunter.war">
+  <attributes>
+    <attribute name="webrootdir" value="WebRoot" />
+  </attributes>
+</project-module>
+

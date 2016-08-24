@@ -1,0 +1,45 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE hibernate-configuration PUBLIC
+          "-//Hibernate/Hibernate Configuration DTD 3.0//EN"
+          "http://hibernate.sourceforge.net/hibernate-configuration-3.0.dtd">
+<hibernate-configuration>
+
+	<session-factory>
+		<property name="dialect">
+			org.hibernate.dialect.MySQLDialect
+		</property>
+		<property name="connection.url">
+			jdbc:mysql://127.0.0.1:3306/hunter?useUnicode=true&amp;characterEncoding=UTF-8
+		</property>
+		<property name="connection.username">root</property>
+		<property name="connection.password">123456</property>
+		<property name="connection.driver_class">
+			com.mysql.jdbc.Driver
+		</property>
+		<property name="myeclipse.connection.profile">MySql</property>
+		<property name="format_sql">true</property>
+		<property name="show_sql">false</property>
+		<!-- 打开二级缓存 -->
+		<property name="hibernate.cache.use_second_level_cache">
+			true
+		</property>
+		<!-- 设置Hibernate缓存接口类 -->
+		<property name="hibernate.cache.provider_class">
+			org.hibernate.cache.EhCacheProvider
+		</property>
+		<!-- Hibernate二级缓存策略，是针对于ID查询的缓存策略，对于条件查询则毫无作用。为此，Hibernate提供了针对条件查询的Query Cache-->
+		<property name="hibernate.cache.use_query_cache">true</property>
+
+		<mapping resource="net/navagraha/hunter/pojo/Task.hbm.xml" />
+		<mapping resource="net/navagraha/hunter/pojo/About.hbm.xml" />
+		<mapping resource="net/navagraha/hunter/pojo/Pay.hbm.xml" />
+		<mapping resource="net/navagraha/hunter/pojo/Tag.hbm.xml" />
+		<mapping resource="net/navagraha/hunter/pojo/Power.hbm.xml" />
+		<mapping resource="net/navagraha/hunter/pojo/Advert.hbm.xml" />
+		<mapping resource="net/navagraha/hunter/pojo/Users.hbm.xml" />
+		<mapping resource="net/navagraha/hunter/pojo/Apply.hbm.xml" />
+		<mapping resource="net/navagraha/hunter/pojo/Money.hbm.xml" />
+
+	</session-factory>
+
+</hibernate-configuration>

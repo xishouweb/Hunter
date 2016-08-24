@@ -1,0 +1,24 @@
+#MyEclipse Hibernate Properties
+#Wed Aug 10 18:30:16 CST 2016
+sessionFactoryName=hunter.com.dao.HibernateSessionFactory
+genBasicCompId=false
+profile=
+daoSFId=
+version=3.3
+jndiPath=
+detectM2M=false
+reStrategyClass=
+detectO2O=false
+springDaoFile=
+useJavaTypes=true
+keyGenerator=identity
+libInstallFolder=WebRoot/WEB-INF/lib
+addLibs2Project=true
+genVersionTag=false
+sessionFactoryId=
+basePersistenceClass=
+genAnnotations=false
+reSettingsFile=/Hunter/hibernate.reveng.xml
+configFile=/Hunter/src/hibernate.cfg.xml
+createConfigFile=true
+addLibs2Classpath=true

@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE hibernate-mapping PUBLIC "-//Hibernate/Hibernate Mapping DTD 3.0//EN"
+"http://hibernate.sourceforge.net/hibernate-mapping-3.0.dtd">
+
+<hibernate-mapping>
+    <class name="net.navagraha.hunter.pojo.Users" table="users" catalog="hunter">
+        <cache usage="read-write"/>
+        <id name="useId" type="java.lang.Integer">
+            <column name="use_id" />
+            <generator class="identity" />
+        </id>
+        <property name="useSno" type="java.lang.String">
+            <column name="use_sno" length="20" not-null="true" />
+        </property>
+        <property name="useNickname" type="java.lang.String">
+            <column name="use_nickname" length="20" />
+        </property>
+        <property name="useName" type="java.lang.String">
+            <column name="use_name" length="20" not-null="true" />
+        </property>
+        <property name="usePwd" type="java.lang.String">
+            <column name="use_pwd" length="10" not-null="true" />
+        </property>
+        <property name="useSex" type="java.lang.String">
+            <column name="use_sex" length="2" />
+        </property>
+        <property name="useAge" type="java.lang.Integer">
+            <column name="use_age" />
+        </property>
+        <property name="useImg" type="java.lang.String">
+            <column name="use_img" length="50" />
+        </property>
+        <property name="useMoods" type="java.lang.Integer">
+            <column name="use_moods" />
+        </property>
+        <property name="useSign" type="java.lang.String">
+            <column name="use_sign" length="300" />
+        </property>
+        <property name="useAlipay" type="java.lang.String">
+            <column name="use_alipay" length="50" />
+        </property>
+        <property name="useCollegetime" type="java.lang.String">
+            <column name="use_collegetime" length="4" not-null="true" />
+        </property>
+        <property name="usePhone" type="java.lang.String">
+            <column name="use_phone" length="13" />
+        </property>
+        <property name="useIdcard" type="java.lang.String">
+            <column name="use_idcard" length="18" />
+        </property>
+        <property name="useAcceptnum" type="java.lang.Integer">
+            <column name="use_acceptnum" />
+        </property>
+        <property name="usePublishnum" type="java.lang.Integer">
+            <column name="use_publishnum" />
+        </property>
+        <property name="useDepart" type="java.lang.String">
+            <column name="use_depart" length="30" not-null="true" />
+        </property>
+        <property name="useCollege" type="java.lang.String">
+            <column name="use_college" length="30" />
+        </property>
+        <property name="useMajor" type="java.lang.String">
+            <column name="use_major" length="20" />
+        </property>
+        <property name="useCollegesize" type="java.lang.Integer">
+            <column name="use_collegesize" />
+        </property>
+        <property name="useShowsign" type="java.lang.Integer">
+            <column name="use_showsign" />
+        </property>
+        <property name="useRefresh" type="java.lang.String">
+            <column name="use_refresh" length="40" />
+        </property>
+        <property name="useAddress" type="java.lang.String">
+            <column name="use_address" length="60" />
+        </property>
+        <property name="useEmei" type="java.lang.String">
+            <column name="use_emei" length="20" />
+        </property>
+        <property name="useIsprotect" type="java.lang.Integer">
+            <column name="use_isprotect" not-null="true" />
+        </property>
+        <property name="useIscompany" type="java.lang.Integer">
+            <column name="use_iscompany" not-null="true" />
+        </property>
+        
+    </class>
+</hibernate-mapping>

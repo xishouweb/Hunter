@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE struts PUBLIC "-//Apache Software Foundation//DTD Struts Configuration 2.1//EN" "http://struts.apache.org/dtds/struts-2.1.dtd">
+<struts>
+<!-- 指定Web应用的默认编码集,相当于调用HttpServletRequest的setCharacterEncoding方法 -->
+	<constant name="struts.i18n.encoding" value="UTF-8" />
+
+	<!-- 设置浏览器是否缓存静态内容,默认值为true(生产环境下使用),开发阶段最好关闭 -->
+	<constant name="struts.serve.static.browserCache" value="false" />
+
+	<!-- 当struts的配置文件修改后,系统是否自动重新加载该文件,默认值为false(生产环境下使用),开发阶段最好打开 -->
+	<constant name="struts.configuration.xml.reload" value="true" />
+
+	<!-- 开发模式下使用,这样可以打印出更详细的错误信息 -->
+	<constant name="struts.devMode" value="false" />
+
+	<!-- 默认的视图主题  -->
+	<constant name="struts.ui.theme" value="simple" />
+
+	<!-- 配置上传文件的最大值 -->
+	<constant name="struts.multipart.maxSize" value="41943040" />
+
+	<package name="hunter" extends="json-default">
+      
+       <action name="*_*" class="net.navagraha.hunter.action.{1}Action" method="{2}">
+           <result name="success" type="json"><param name="code">code</param> </result>
+           <result name="error" type="json"><param name="code">code</param> </result>
+       </action>
+       
+       <action name="uploadImg" class="net.navagraha.hunter.tool.FileUploadTool" method="uploadImg">
+          <result name="success" type="json"><param name="json">code</param> </result>
+             <!-- 定义文件上传拦截器 -->
+             <interceptor-ref name="fileUpload">
+                 <!-- 设置文件上传大小 -->
+                 <param name="maximumSize">409600</param>
+                 <!-- 设置文件上传类型 -->
+                 <param name="allowedTypes">
+                     image/bmp,image/png,image/gif,image/jpeg,image/jpg
+                 </param>
+             </interceptor-ref>
+             <!-- 自定义了拦截器后必手动定义默认的拦截器，否则默认的拦截器不会被执行 -->
+             <interceptor-ref name="defaultStack"></interceptor-ref>
+        </action>
+        
+	</package>
+
+	<package name="default" extends="struts-default">
+		<default-action-ref name="notFound" />
+		<action name="notFound">
+			<result>/404.jsp</result>
+		</action>
+	</package>
+</struts>    

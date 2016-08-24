@@ -1,0 +1,11 @@
+#Tue Aug 09 14:30:18 CST 2016
+DELEGATES_PREFERENCE=delegateValidatorList
+USER_BUILD_PREFERENCE=enabledBuildValidatorList
+USER_MANUAL_PREFERENCE=enabledManualValidatorList
+USER_PREFERENCE=overrideGlobalPreferencestruedisableAllValidationfalseversion1.2.104.me201003160859
+eclipse.preferences.version=1
+override=true
+suspend=false
+vals/org.eclipse.wst.dtd.core.dtdDTDValidator/global=FF01
+vals/org.eclipse.wst.dtd.core.dtdDTDValidator/groups=0107include03111contentType134org.eclipse.wst.dtd.core.dtdsourceT07fileext03entF07fileext03modF
+vf.version=3

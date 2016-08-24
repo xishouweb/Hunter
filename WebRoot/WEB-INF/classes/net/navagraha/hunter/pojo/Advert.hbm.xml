@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE hibernate-mapping PUBLIC "-//Hibernate/Hibernate Mapping DTD 3.0//EN"
+"http://hibernate.sourceforge.net/hibernate-mapping-3.0.dtd">
+
+<hibernate-mapping>
+    <class name="net.navagraha.hunter.pojo.Advert" table="advert" catalog="hunter">
+        <id name="advId" type="java.lang.Integer">
+            <column name="adv_id" />
+            <generator class="identity" />
+        </id>
+        <property name="advImg" type="java.lang.String">
+            <column name="adv_img" length="50" not-null="true" />
+        </property>
+        <property name="advContent" type="java.lang.String">
+            <column name="adv_content" length="65535" />
+        </property>
+        <property name="advUrl" type="java.lang.String">
+            <column name="adv_url" length="50" />
+        </property>
+        <property name="advHotlevel" type="java.lang.Integer">
+            <column name="adv_hotlevel" not-null="true" />
+        </property>
+    </class>
+</hibernate-mapping>

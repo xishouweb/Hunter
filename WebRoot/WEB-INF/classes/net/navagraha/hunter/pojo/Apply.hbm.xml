@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE hibernate-mapping PUBLIC "-//Hibernate/Hibernate Mapping DTD 3.0//EN"
+"http://hibernate.sourceforge.net/hibernate-mapping-3.0.dtd">
+<!-- 并发访问量较大，不设置缓存 -->
+<hibernate-mapping>
+    <class name="net.navagraha.hunter.pojo.Apply" table="apply" catalog="hunter">
+        <cache usage="read-write"/>
+        <id name="appId" type="java.lang.Integer">
+            <column name="app_id" />
+            <generator class="identity" />
+        </id>
+        <many-to-one name="appBeUser" class="net.navagraha.hunter.pojo.Users" fetch="select" lazy="false">
+            <column name="app_beuser" not-null="true" />
+        </many-to-one>
+        <many-to-one name="appTask" class="net.navagraha.hunter.pojo.Task" fetch="select" lazy="false">
+            <column name="app_task" not-null="true" />
+        </many-to-one>
+        <property name="appReason" type="java.lang.String">
+            <column name="app_reason" length="65535" />
+        </property>
+        <property name="appState" type="java.lang.Integer">
+            <column name="app_state" />
+        </property>
+    </class>
+</hibernate-mapping>

@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE hibernate-mapping PUBLIC "-//Hibernate/Hibernate Mapping DTD 3.0//EN"
+"http://hibernate.sourceforge.net/hibernate-mapping-3.0.dtd">
+
+<hibernate-mapping>
+    <class name="net.navagraha.hunter.pojo.Pay" table="pay" catalog="hunter">
+    	<cache usage="read-write"/>
+        <id name="payId" type="java.lang.Integer">
+            <column name="pay_id" />
+            <generator class="identity" />
+        </id>
+        <many-to-one name="payUser" class="net.navagraha.hunter.pojo.Users" fetch="select" lazy="false">
+            <column name="pay_user" not-null="true" />
+        </many-to-one>
+        <property name="payTime" type="java.lang.String">
+            <column name="pay_time" length="40" not-null="true" />
+        </property>
+        <property name="payIn" type="java.lang.Double">
+            <column name="pay_in" />
+        </property>
+        <property name="payOut" type="java.lang.Double">
+            <column name="pay_out" />
+        </property>
+    </class>
+</hibernate-mapping>

@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE hibernate-mapping PUBLIC "-//Hibernate/Hibernate Mapping DTD 3.0//EN"
+"http://hibernate.sourceforge.net/hibernate-mapping-3.0.dtd">
+<!-- 并发访问量大，不设置缓存 -->
+<hibernate-mapping>
+    <class name="net.navagraha.hunter.pojo.Task" table="task" catalog="hunter">
+        <id name="tasId" type="java.lang.Integer">
+            <column name="tas_id" />
+            <generator class="identity" />
+        </id>
+        <many-to-one name="tasUser" class="net.navagraha.hunter.pojo.Users" fetch="select" lazy="false">
+            <column name="tas_user" not-null="true" />
+        </many-to-one>
+        <property name="tasTitle" type="java.lang.String">
+            <column name="tas_title" length="30" not-null="true" />
+        </property>
+        <property name="tasImg" type="java.lang.String">
+            <column name="tas_img" length="50" />
+        </property>
+        <property name="tasContact" type="java.lang.String">
+            <column name="tas_contact" length="30" not-null="true" />
+        </property>
+        <property name="tasContent" type="java.lang.String">
+            <column name="tas_content" length="65535" />
+        </property>
+        <property name="tasTime" type="java.lang.String">
+            <column name="tas_time" length="40" not-null="true" />
+        </property>
+        <property name="tasPrice" type="java.lang.Integer">
+            <column name="tas_price" not-null="true" />
+        </property>
+        <property name="tasType" type="java.lang.String">
+            <column name="tas_type" length="8" not-null="true" />
+        </property>
+        <property name="tasState" type="java.lang.Integer">
+            <column name="tas_state" not-null="true" />
+        </property>
+        <property name="tasTimeout" type="java.lang.String">
+            <column name="tas_timeout" length="40" not-null="true" />
+        </property>
+        <property name="tasFinishtime" type="java.lang.String">
+            <column name="tas_finishtime" length="40" />
+        </property>
+        <property name="tasRulenum" type="java.lang.Integer">
+            <column name="tas_rulenum" />
+        </property>
+        <property name="tasReceivenum" type="java.lang.Integer">
+            <column name="tas_receivenum" />
+        </property>
+        <property name="tasFinishnum" type="java.lang.Integer">
+            <column name="tas_finishnum" />
+        </property>
+        <property name="tasEvaluate" type="java.lang.String">
+            <column name="tas_evaluate" length="65535" />
+        </property>
+        <set name="tasApplies" inverse="true" order-by="app_Id" fetch="select" lazy="false">
+            <key>
+                <column name="app_task" not-null="true" />
+            </key>
+            <one-to-many class="net.navagraha.hunter.pojo.Apply" />
+        </set>
+    </class>
+</hibernate-mapping>

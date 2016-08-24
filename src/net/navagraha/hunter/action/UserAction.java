@@ -253,6 +253,7 @@ public class UserAction {
 		Users user = object != null ? (Users) object : null;
 
 		if (user != null) {
+			System.out.println(useAlipay);
 			user.setUseAlipay(useAlipay);
 			user.setUseName(useName);
 			objectDao.update(user);
@@ -462,7 +463,7 @@ public class UserAction {
 				.getAttribute("Users");
 		Users user = object != null ? (Users) object : null;
 		if (user != null) {
-			if (user.getUseIsprotect() == 0) // 关闭状态
+			if (user.getUseIsprotect().intValue() == 0) // 关闭状态
 				user.setUseIsprotect(1);
 			else
 				user.setUseIsprotect(0);
@@ -481,7 +482,7 @@ public class UserAction {
 				.getAttribute("Users");
 		Users user = object != null ? (Users) object : null;
 		if (user != null) {
-			if (user.getUseShowsign() == 0) // 关闭状态
+			if (user.getUseShowsign().intValue() == 0) // 关闭状态
 				user.setUseShowsign(1);
 			else
 				user.setUseShowsign(0);

@@ -210,7 +210,6 @@ public class TaskAction {
 				if (task.getTasUser().getUseSex().equals("女"))
 					b++;
 				tag.setTagSex(a + "," + b);
-
 				// 设置接收任务类型
 				strs = tag.getTagTasktype().split(",");
 				int c = Integer.parseInt(strs[0]), d = Integer
@@ -222,7 +221,6 @@ public class TaskAction {
 				if (task.getTasType().equals("团队"))
 					e++;
 				tag.setTagTasktype(c + "," + d + "," + e);
-
 				objectDao.update(tag);
 			}
 			// 记录tag结束
@@ -497,101 +495,110 @@ public class TaskAction {
 						.hasNext();) {
 					Apply apply = (Apply) iterator.next();
 
-					Users user = apply.getAppBeUser();
+					if (apply.getAppState() == 1) {// 任务的真实接受者
+						apply.setAppState(3);// 任务成功
+						objectDao.update(apply);
 
-					/** 打钱 */
-					Money money = new Money();
-					money.setMonAlipay(user.getUseAlipay());
-					money.setMonComment("");
-					money.setMonName(user.getUseName());
-					money.setMonNo(new SimpleDateFormat("yyyyMMddHHmmssSSS")
-							.format(new Date())
-							+ user.getUseSno().substring(
-									user.getUseSno().length() - 4));
-					money.setMonPay(task.getTasPrice() * (1 - SUCCESS_TAX));
-					money.setMonState(0);// 未打钱
-					if (task.getTasUser().getUseIscompany() == 1) {
-						money.setMonType("特殊");
-					} else
-						money.setMonType(task.getTasType());
-					money.setMonTime(new SimpleDateFormat("yyyyMMdd")
-							.format(new Date()));
-					objectDao.save(money);
-					/** 打钱结束 */
+						Users user = apply.getAppBeUser();
 
-					/** 能力 **/
-					// 获取任务接收者的power
-					List<?> list3 = objectDao.getObjectListByfield("Power",
-							"powUser", user);
-					Power power;
-					if (powCredit != null && list3.size() > 0) {
-
-						power = (Power) list3.get(0);
-						power.setPowCredit(power.getPowCredit() + powCredit);
-						if (isFast == 1)
-							power.setPowFast(power.getPowFast() + 1);
-						objectDao.update(power);
-					}
-					/** 能力结束 **/
-
-					/** 支付日志 **/
-					SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM");
-					Pay payOut, payIn;
-
-					// 获取任务发布者的pay
-					List<?> list1 = objectDao.getObjectListByfield("Pay",
-							new String[] { "payTime", "payUser" },
-							new Object[] { sdf.format(new Date()),
-									task.getTasUser() });
-
-					if (list1.size() > 0) {
-						// 支出者
-						payOut = (Pay) list1.get(0);
-						payOut.setPayOut(payOut.getPayOut()
-								+ task.getTasPrice() + 0.0);
-					} else {
-						// 支出者
-						payOut = new Pay();
-						payOut.setPayTime(sdf.format(new Date()));
-						payOut.setPayIn(0.0);
-						payOut.setPayOut(task.getTasPrice() + 0.0);
-						payOut.setPayUser(task.getTasUser());
-					}
-					objectDao.saveOrUpdate(payOut);
-
-					// 获取任务收入者的pay
-					List<?> list2 = objectDao.getObjectListByfield("Pay",
-							new String[] { "payTime", "payUser" },
-							new Object[] { sdf.format(new Date()), user });
-
-					if (list2.size() > 0) {
-						// 收入者
-						payIn = (Pay) list2.get(0);
-						if (task.getTasType().equals("团队"))
-							payIn.setPayIn(payIn.getPayIn()
-									+ task.getTasPrice() * (1 - SUCCESS_TAX)
-									/ task.getTasRulenum());
-						else
-							payIn.setPayIn(payIn.getPayIn()
-									+ task.getTasPrice() * (1 - SUCCESS_TAX));
-					} else {
-						// 收入者
-						payIn = new Pay();
-						payIn.setPayTime(sdf.format(new Date()));
-						payIn.setPayOut(0.0);
-						if (task.getTasType().equals("团队")) {
-							payIn.setPayIn(task.getTasPrice()
-									* (1 - SUCCESS_TAX) / task.getTasRulenum());
+						/** 打钱 */
+						Money money = new Money();
+						money.setMonAlipay(user.getUseAlipay());
+						money.setMonComment("");
+						money.setMonName(user.getUseName());
+						money
+								.setMonNo(new SimpleDateFormat(
+										"yyyyMMddHHmmssSSS").format(new Date())
+										+ user.getUseSno().substring(
+												user.getUseSno().length() - 4));
+						money.setMonPay(task.getTasPrice() * (1 - SUCCESS_TAX));
+						money.setMonState(0);// 未打钱
+						if (task.getTasUser().getUseIscompany() == 1) {
+							money.setMonType("特殊");
 						} else
-							payIn.setPayIn(task.getTasPrice()
-									* (1 - SUCCESS_TAX));
-						payIn.setPayUser(user);
-					}
-					objectDao.saveOrUpdate(payIn);
-					/** 支付日志结束 **/
+							money.setMonType(task.getTasType());
+						money.setMonTime(new SimpleDateFormat("yyyyMMdd")
+								.format(new Date()));
+						objectDao.save(money);
+						/** 打钱结束 */
 
-					apply.setAppState(3);// 任务成功
-					objectDao.update(apply);
+						/** 能力 **/
+						// 获取任务接收者的power
+						List<?> list3 = objectDao.getObjectListByfield("Power",
+								"powUser", user);
+						Power power;
+						if (powCredit != null && list3.size() > 0) {
+
+							power = (Power) list3.get(0);
+							power
+									.setPowCredit(power.getPowCredit()
+											+ powCredit);
+							if (isFast == 1)
+								power.setPowFast(power.getPowFast() + 1);
+							objectDao.update(power);
+						}
+						/** 能力结束 **/
+
+						/** 支付日志 **/
+						SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM");
+						Pay payOut, payIn;
+
+						// 获取任务发布者的pay
+						List<?> list1 = objectDao.getObjectListByfield("Pay",
+								new String[] { "payTime", "payUser" },
+								new Object[] { sdf.format(new Date()),
+										task.getTasUser() });
+
+						if (list1.size() > 0) {
+							// 支出者
+							payOut = (Pay) list1.get(0);
+							payOut.setPayOut(payOut.getPayOut()
+									+ task.getTasPrice() + 0.0);
+						} else {
+							// 支出者
+							payOut = new Pay();
+							payOut.setPayTime(sdf.format(new Date()));
+							payOut.setPayIn(0.0);
+							payOut.setPayOut(task.getTasPrice() + 0.0);
+							payOut.setPayUser(task.getTasUser());
+						}
+						objectDao.saveOrUpdate(payOut);
+
+						// 获取任务收入者的pay
+						List<?> list2 = objectDao.getObjectListByfield("Pay",
+								new String[] { "payTime", "payUser" },
+								new Object[] { sdf.format(new Date()), user });
+
+						if (list2.size() > 0) {
+							// 收入者
+							payIn = (Pay) list2.get(0);
+							if (task.getTasType().equals("团队"))
+								payIn.setPayIn(payIn.getPayIn()
+										+ task.getTasPrice()
+										* (1 - SUCCESS_TAX)
+										/ task.getTasRulenum());
+							else
+								payIn.setPayIn(payIn.getPayIn()
+										+ task.getTasPrice()
+										* (1 - SUCCESS_TAX));
+						} else {
+							// 收入者
+							payIn = new Pay();
+							payIn.setPayTime(sdf.format(new Date()));
+							payIn.setPayOut(0.0);
+							if (task.getTasType().equals("团队")) {
+								payIn.setPayIn(task.getTasPrice()
+										* (1 - SUCCESS_TAX)
+										/ task.getTasRulenum());
+							} else
+								payIn.setPayIn(task.getTasPrice()
+										* (1 - SUCCESS_TAX));
+							payIn.setPayUser(user);
+						}
+						objectDao.saveOrUpdate(payIn);
+						/** 支付日志结束 **/
+
+					}
 				}
 				task.setTasState(4);// 任务成功
 				task.setTasEvaluate(tasEvaluate);
@@ -624,19 +631,24 @@ public class TaskAction {
 				for (Iterator<Apply> iterator = set.iterator(); iterator
 						.hasNext();) {
 					Apply apply = (Apply) iterator.next();
-					Users beUser = apply.getAppBeUser();
-					// 获取任务接收者的power
-					List<?> list3 = objectDao.getObjectListByfield("Power",
-							"powUser", beUser);
-					Power power;
-					if (powCredit != null) {
 
-						if (list3.size() > 0) {
-							power = (Power) list3.get(0);
-							power
-									.setPowCredit(power.getPowCredit()
-											- powCredit);
-							objectDao.update(power);
+					if (apply.getAppState() == 1) {// 任务的真实接受者
+						apply.setAppState(4);// 任务失败
+						objectDao.update(apply);
+
+						Users beUser = apply.getAppBeUser();
+						// 获取任务接收者的power
+						List<?> list3 = objectDao.getObjectListByfield("Power",
+								"powUser", beUser);
+						Power power;
+						if (powCredit != null) {
+
+							if (list3.size() > 0) {
+								power = (Power) list3.get(0);
+								power.setPowCredit(power.getPowCredit()
+										- powCredit);
+								objectDao.update(power);
+							}
 						}
 					}
 				}
@@ -695,12 +707,7 @@ public class TaskAction {
 					setCode("1");// 操作成功
 					return "success";
 				} else {
-					for (Iterator<Apply> iterator = set.iterator(); iterator
-							.hasNext();) {
-						Apply apply = (Apply) iterator.next();
-						apply.setAppState(4);// 任务失败
-						objectDao.update(apply);
-					}
+
 					task.setTasState(0);// 任务已发布，继续可接
 					task.setTasApplies(null);// 接任务人清空
 					objectDao.update(task);

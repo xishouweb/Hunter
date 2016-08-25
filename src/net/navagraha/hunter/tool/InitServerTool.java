@@ -16,6 +16,7 @@ import net.navagraha.hunter.pojo.Apply;
 import net.navagraha.hunter.pojo.Money;
 import net.navagraha.hunter.pojo.Pay;
 import net.navagraha.hunter.pojo.Power;
+import net.navagraha.hunter.pojo.Tag;
 import net.navagraha.hunter.pojo.Task;
 import net.navagraha.hunter.pojo.Users;
 import net.navagraha.hunter.server.ObjectDao;
@@ -31,9 +32,9 @@ public class InitServerTool implements ServletContextListener {
 
 	public void contextInitialized(ServletContextEvent sce) {
 		// TODO 投入使用时取消注释
-		// runable = new MyRunable();
-		// Thread thread = new Thread(runable);
-		// thread.start();
+		runable = new MyRunable();
+		Thread thread = new Thread(runable);
+		thread.start();
 	}
 
 }
@@ -64,25 +65,42 @@ class MyRunable implements Runnable {
 		while (run) {
 			doDB4Set();
 			doDB4Money();
+			do4User();
 			try {
-				Thread.sleep(CHECK_SECOND);// 一分钟检查一次
+				Thread.sleep(CHECK_SECOND);// 默认60秒检查一次
 			} catch (InterruptedException e) {
-				e.printStackTrace();
+				System.err.println(e.getMessage());
 			}
 		}
 	}
 
-	// 获取当前时间的N天前
-	private static String getDateFromNow(int afterDay) {
-		GregorianCalendar calendar = new GregorianCalendar();
-		Date date = calendar.getTime();
-
-		SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-
-		calendar.set(Calendar.DATE, calendar.get(Calendar.DATE) - afterDay);
-		date = calendar.getTime();
-
-		return df.format(date);
+	// 每天获取活跃用户前三名进行奖励
+	private void do4User() {
+		String ruleTime = "23:59";// 在凌晨进行统计，活跃前三进行奖励发送
+		String sysTime = new SimpleDateFormat("HH:MM").format(new Date());
+		if (ruleTime.equals(sysTime)) {
+			List<?> list = objectDao.getObjectListBycond("Tag",
+					"order by tagTimeout desc limit 3");
+			for (Object object : list) {
+				Tag tag = (Tag) object;
+				Users user = tag.getTagUser();
+				// 奖励
+				Money money = new Money();
+				money.setMonAlipay(user.getUseAlipay());
+				money.setMonComment("");
+				money.setMonName(user.getUseName());
+				money.setMonNo(new SimpleDateFormat("yyyyMMddHHmmssSSS")
+						.format(new Date())
+						+ user.getUseSno().substring(
+								user.getUseSno().length() - 4));
+				money.setMonPay(50.0);
+				money.setMonState(0);// 未打钱
+				money.setMonType("特殊");
+				money.setMonTime(new SimpleDateFormat("yyyyMMdd")
+						.format(new Date()));
+				objectDao.save(money);
+			}
+		}
 	}
 
 	// 超过时间失效
@@ -92,14 +110,15 @@ class MyRunable implements Runnable {
 				+ "' and tasState in (0,1,2)";
 		List<?> list = objectDao.getObjectListBycond("Task", hql);
 		if (list.size() > 0) {
-			System.err.println("超过时间失效：本次设置" + list.size() + "条任务失失败");
+			System.out.println("【超过时间失效】：本次设置" + list.size() + "条任务状态为失败");
 			for (Object object : list) {
 				Task task = (Task) object;
 				if (task.getTasState() < 2 || task.getTasType().equals("加急个人")) {// 到规定时间都没有人接受任务或者任务为加急任务
 					task.setTasState(5);// 任务失败
 					objectDao.update(task);
 					Users user = task.getTasUser();
-					// 返钱
+
+					/** 返钱 */
 					Money money = new Money();
 					money.setMonAlipay(user.getUseAlipay());
 					money.setMonComment("");
@@ -117,27 +136,34 @@ class MyRunable implements Runnable {
 					money.setMonTime(new SimpleDateFormat("yyyyMMdd")
 							.format(new Date()));
 					objectDao.save(money);
+					/** 返钱结束 */
 
 					/** 能力 **/
 					Set<Apply> set = task.getTasApplies();
 					for (Iterator<Apply> iterator = set.iterator(); iterator
 							.hasNext();) {
 						Apply apply = (Apply) iterator.next();
-						Users beUser = apply.getAppBeUser();
-						// 获取任务接收者的power
-						List<?> list3 = objectDao.getObjectListByfield("Power",
-								"powUser", beUser.getUseId());
-						Power power;
 
-						if (list3.size() > 0) {
-							power = (Power) list3.get(0);
-							power.setPowCredit(power.getPowCredit() - 4);// 任务过期失败，接受者默认减少2点信誉值
-						} else {
-							power = new Power();
-							power.setPowCredit(50 - 4);
-							power.setPowUser(beUser);
+						if (apply.getAppState() == 1) {// 任务的真实接受者才进行扣信誉
+							apply.setAppState(4);// 任务失败
+							objectDao.update(apply);
+
+							Users beUser = apply.getAppBeUser();
+							// 获取任务接收者的power
+							List<?> list3 = objectDao.getObjectListByfield(
+									"Power", "powUser", beUser);
+							Power power;
+
+							if (list3.size() > 0) {
+								power = (Power) list3.get(0);
+								power.setPowCredit(power.getPowCredit() - 4);// 任务过期失败，接受者默认减少4点信誉值
+							} else {
+								power = new Power();
+								power.setPowCredit(50 - 4);
+								power.setPowUser(beUser);
+							}
+							objectDao.saveOrUpdate(power);
 						}
-						objectDao.saveOrUpdate(power);
 					}
 					/** 能力结束 **/
 
@@ -148,8 +174,7 @@ class MyRunable implements Runnable {
 					// 获取任务发布者的pay
 					List<?> list1 = objectDao.getObjectListByfield("Pay",
 							new String[] { "payTime", "payUser" },
-							new Object[] { sdf.format(new Date()),
-									user.getUseId() });
+							new Object[] { sdf.format(new Date()), user });
 
 					if (list1.size() > 0) {
 						// 支出者
@@ -167,31 +192,36 @@ class MyRunable implements Runnable {
 					objectDao.saveOrUpdate(payOut);
 					/** 支付日志结束 **/
 
-					return;
+				} else {
+					task.setTasState(6);
+					objectDao.update(task);
 				}
-				task.setTasState(6);
-				objectDao.update(task);
 			}
 		}
 	}
 
-	// 超过时间打钱
+	// 超过时间未通过任务自动打钱
 	private void doDB4Money() {
 
 		String oldTime = getDateFromNow(EXPIRE_DAY);
 		String hql = "where tasState=3 and tasFinishtime<='" + oldTime + "'";
 		List<?> list = objectDao.getObjectListBycond("Task", hql);
 		if (list.size() > 0) {
-			System.err.println("超过时间打钱：本次给" + list.size() + "个用户自动打钱");
+			System.out.println("【超过时间未通过任务自动打钱】：本次给" + list.size() + "个用户自动打钱");
 			for (Object object : list) {
 				Task task = (Task) object;
 				Set<Apply> set = task.getTasApplies();
 				for (Iterator<Apply> iterator = set.iterator(); iterator
 						.hasNext();) {
 					Apply apply = (Apply) iterator.next();
+
 					if (apply.getAppState() == 1) {// 为该任务的实际接受者
+						apply.setAppState(3);// 任务成功
+						objectDao.update(apply);
+
 						Users user = apply.getAppBeUser();
-						// 打钱
+
+						/** 打钱 */
 						Money money = new Money();
 						money.setMonAlipay(user.getUseAlipay());
 						money.setMonComment("");
@@ -210,6 +240,7 @@ class MyRunable implements Runnable {
 						money.setMonTime(new SimpleDateFormat("yyyyMMdd")
 								.format(new Date()));
 						objectDao.save(money);
+						/** 打钱结束 */
 
 						/** 支付日志 **/
 						SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM");
@@ -219,19 +250,19 @@ class MyRunable implements Runnable {
 						List<?> list1 = objectDao.getObjectListByfield("Pay",
 								new String[] { "payTime", "payUser" },
 								new Object[] { sdf.format(new Date()),
-										task.getTasUser().getUseId() });
+										task.getTasUser() });
 
 						if (list1.size() > 0) {
 							// 支出者
 							payOut = (Pay) list1.get(0);
 							payOut.setPayOut(payOut.getPayOut()
-									+ task.getTasPrice() + 0.0);
+									+ task.getTasPrice() * 1.0);
 						} else {
 							// 支出者
 							payOut = new Pay();
 							payOut.setPayTime(sdf.format(new Date()));
 							payOut.setPayIn(0.0);
-							payOut.setPayOut(task.getTasPrice() + 0.0);
+							payOut.setPayOut(task.getTasPrice() * 1.0);
 							payOut.setPayUser(task.getTasUser());
 						}
 						objectDao.saveOrUpdate(payOut);
@@ -239,8 +270,7 @@ class MyRunable implements Runnable {
 						// 获取任务收人者的pay
 						List<?> list2 = objectDao.getObjectListByfield("Pay",
 								new String[] { "payTime", "payUser" },
-								new Object[] { sdf.format(new Date()),
-										user.getUseId() });
+								new Object[] { sdf.format(new Date()), user });
 
 						if (list2.size() > 0) {
 							// 收入者
@@ -272,11 +302,24 @@ class MyRunable implements Runnable {
 						/** 支付日志结束 **/
 
 					}
-
 				}
 				task.setTasState(4);// 任务成功
 				objectDao.update(task);
 			}
 		}
 	}
+
+	/** 获取当前时间的N天前 */
+	private static String getDateFromNow(int afterDay) {
+		GregorianCalendar calendar = new GregorianCalendar();
+		Date date = calendar.getTime();
+
+		SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+
+		calendar.set(Calendar.DATE, calendar.get(Calendar.DATE) - afterDay);
+		date = calendar.getTime();
+
+		return df.format(date);
+	}
+
 }

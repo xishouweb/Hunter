@@ -52,6 +52,14 @@ public class UserAction {
 	// #用户激活
 	public String activate() {
 
+		// 查询已激活学生人数
+		int size = objectDao
+				.getObjectSizeBycond("select count(*) from Users where useIscompany==0");
+		if (size > 100) {
+			setCode("20");
+			return "success";
+		}
+
 		List<?> list = objectDao.getObjectListByfieldInActivate("Users",
 				"useSno", useSno);
 		Users user = list.size() > 0 ? (Users) list.get(0) : null;
@@ -171,7 +179,7 @@ public class UserAction {
 
 	/** 比较两个时间 */
 	private static boolean compare(String d1, String d2) {
-		SimpleDateFormat sdf = new SimpleDateFormat("hh:mm:ss");
+		SimpleDateFormat sdf = new SimpleDateFormat("HH:mm:ss");
 		try {
 			Date dt1 = sdf.parse(d1);
 			Date dt2 = sdf.parse(d2);
@@ -403,11 +411,6 @@ public class UserAction {
 				for (Object object2 : list) {
 					if (!((Users) object2).getUseId().toString().equals(
 							user.getUseId().toString())) {
-						System.out.println(((Users) object2).getUseId());
-						System.out.println(user.getUseId());
-						System.out
-								.println((((Users) object2).getUseId()) == (user
-										.getUseId()));
 						setCode("2");// 昵称重名
 						return "success";
 					}

@@ -103,14 +103,16 @@ public class PowerAction {
 				index++;
 				count = 1;
 			}
-			if (credit >= begin && credit <= begin + diff) {
+			if (credit >= begin && credit <= begin + diff)
 				return levelStr[index] + (6 - count % 6);
-			}
+
+			if (credit < 0)
+				return "青铜猎手5";
 
 			begin += diff + 1;
 			count++;
 		}
-		return "王者猎手：" + begin;
+		return "王者猎手";
 	}
 
 	// Property accessors

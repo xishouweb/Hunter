@@ -31,7 +31,8 @@ public class ObjectDaoImpl implements ObjectDao {
 			tran.rollback();
 			return null;
 		} finally {
-			session.close();
+			if (session.isOpen())
+				session.close();
 		}
 	}
 
@@ -45,7 +46,8 @@ public class ObjectDaoImpl implements ObjectDao {
 		} catch (Exception e) {
 			tran.rollback();
 		} finally {
-			session.close();
+			if (session.isOpen())
+				session.close();
 		}
 	}
 
@@ -59,7 +61,8 @@ public class ObjectDaoImpl implements ObjectDao {
 		} catch (Exception e) {
 			tran.rollback();
 		} finally {
-			session.close();
+			if (session.isOpen())
+				session.close();
 		}
 	}
 
@@ -73,7 +76,8 @@ public class ObjectDaoImpl implements ObjectDao {
 		} catch (Exception e) {
 			tran.rollback();
 		} finally {
-			session.close();
+			if (session.isOpen())
+				session.close();
 		}
 	}
 
@@ -87,7 +91,8 @@ public class ObjectDaoImpl implements ObjectDao {
 		} catch (Exception e) {
 			tran.rollback();
 		} finally {
-			session.close();
+			if (session.isOpen())
+				session.close();
 		}
 	}
 
@@ -102,7 +107,8 @@ public class ObjectDaoImpl implements ObjectDao {
 		} catch (Exception e) {
 			tran.rollback();
 		} finally {
-			session.close();
+			if (session.isOpen())
+				session.close();
 		}
 	}
 
@@ -126,7 +132,8 @@ public class ObjectDaoImpl implements ObjectDao {
 			tran.rollback();
 			return new ArrayList<Object>();
 		} finally {
-			session.close();
+			if (session.isOpen())
+				session.close();
 		}
 	}
 
@@ -148,7 +155,8 @@ public class ObjectDaoImpl implements ObjectDao {
 			tran.rollback();
 			return new ArrayList<Object>();
 		} finally {
-			session.close();
+			if (session.isOpen())
+				session.close();
 		}
 	}
 
@@ -181,7 +189,8 @@ public class ObjectDaoImpl implements ObjectDao {
 			tran.rollback();
 			return new ArrayList<Object>();
 		} finally {
-			session.close();
+			if (session.isOpen())
+				session.close();
 		}
 	}
 
@@ -199,7 +208,8 @@ public class ObjectDaoImpl implements ObjectDao {
 			tran.rollback();
 			return 0;
 		} finally {
-			session.close();
+			if (session.isOpen())
+				session.close();
 		}
 	}
 
@@ -216,7 +226,8 @@ public class ObjectDaoImpl implements ObjectDao {
 			tran.rollback();
 			return 0;
 		} finally {
-			session.close();
+			if (session.isOpen())
+				session.close();
 		}
 	}
 
@@ -245,7 +256,8 @@ public class ObjectDaoImpl implements ObjectDao {
 			tran.rollback();
 			return new ArrayList<Object>();
 		} finally {
-			session.close();
+			if (session.isOpen())
+				session.close();
 		}
 	}
 
@@ -266,7 +278,8 @@ public class ObjectDaoImpl implements ObjectDao {
 			tran.rollback();
 			return new ArrayList<Object>();
 		} finally {
-			session.close();
+			if (session.isOpen())
+				session.close();
 		}
 	}
 
@@ -289,7 +302,8 @@ public class ObjectDaoImpl implements ObjectDao {
 			tran.rollback();
 			return new ArrayList<Object>();
 		} finally {
-			session.close();
+			if (session.isOpen())
+				session.close();
 		}
 	}
 
@@ -313,7 +327,8 @@ public class ObjectDaoImpl implements ObjectDao {
 			tran.rollback();
 			return new ArrayList<Object>();
 		} finally {
-			session.close();
+			if (session.isOpen())
+				session.close();
 		}
 	}
 
@@ -338,7 +353,8 @@ public class ObjectDaoImpl implements ObjectDao {
 			tran.rollback();
 			return new ArrayList<Object>();
 		} finally {
-			session.close();
+			if (session.isOpen())
+				session.close();
 		}
 	}
 

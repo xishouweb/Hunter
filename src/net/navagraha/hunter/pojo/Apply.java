@@ -9,6 +9,7 @@ public class Apply implements java.io.Serializable {
 	private Task appTask;
 	private String appReason;
 	private Integer appState;
+	private String appTime;
 
 	// Property accessors
 
@@ -50,6 +51,14 @@ public class Apply implements java.io.Serializable {
 
 	public Task getAppTask() {
 		return appTask;
+	}
+
+	public void setAppTime(String appTime) {
+		this.appTime = appTime;
+	}
+
+	public String getAppTime() {
+		return appTime;
 	}
 
 }

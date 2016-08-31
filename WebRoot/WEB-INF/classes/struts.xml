@@ -12,6 +12,9 @@
 
 	<!-- 开发模式下使用,这样可以打印出更详细的错误信息 -->
 	<constant name="struts.devMode" value="false" />
+	
+	<!-- 设置存放临时文件的文件夹,如果此文件夹不存在，Struts 2会自动创建一个(默认c:\tmp) -->
+	<constant name="struts.multipart.saveDir" value="/tmp"></constant>
 
 	<!-- 默认的视图主题  -->
 	<constant name="struts.ui.theme" value="simple" />
@@ -20,7 +23,7 @@
 	<constant name="struts.multipart.maxSize" value="41943040" />
 
 	<package name="hunter" extends="json-default">
-      
+
        <action name="*_*" class="net.navagraha.hunter.action.{1}Action" method="{2}">
            <result name="success" type="json"><param name="code">code</param> </result>
            <result name="error" type="json"><param name="code">code</param> </result>
@@ -41,12 +44,10 @@
              <interceptor-ref name="defaultStack"></interceptor-ref>
         </action>
         
-	</package>
-
-	<package name="default" extends="struts-default">
-		<default-action-ref name="notFound" />
-		<action name="notFound">
+        <action name="*">
 			<result>/404.jsp</result>
 		</action>
+        
 	</package>
+
 </struts>    

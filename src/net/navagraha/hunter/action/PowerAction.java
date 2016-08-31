@@ -17,6 +17,13 @@ public class PowerAction {
 
 	private static ObjectDao objectDao = new ObjectDaoImpl();
 
+	/** 获取Dao */
+	public ObjectDao giveDao() {
+		if (objectDao == null)
+			objectDao = new ObjectDaoImpl();
+		return objectDao;
+	}
+
 	// 反馈到前台
 	public JSONObject json = new JSONObject();
 
@@ -30,8 +37,8 @@ public class PowerAction {
 
 		json = new JSONObject();
 
-		List<?> list = objectDao.getObjectListBycond("Power", "where powUser="
-				+ userId);
+		List<?> list = giveDao().getObjectListBycond("Power",
+				"where powUser=" + userId);
 		Power power = list.size() > 0 ? (Power) list.get(0) : null;
 
 		if (power == null) {
@@ -39,7 +46,7 @@ public class PowerAction {
 			power.setPowCredit(50);
 			power.setPowUser(user);
 			power.setPowFast(0);
-			objectDao.save(power);
+			giveDao().save(power);
 		}
 		json.put("PowerList", power);
 		int credit = Integer.parseInt(((JSONObject) json.get("PowerList"))
@@ -53,8 +60,8 @@ public class PowerAction {
 	// 通过用户Id获取能力值
 	public String givePowerByUseId() {
 
-		List<?> list = objectDao.getObjectListBycond("Power", "where powUser="
-				+ useId);
+		List<?> list = giveDao().getObjectListBycond("Power",
+				"where powUser=" + useId);
 		Power power = list.size() > 0 ? (Power) list.get(0) : null;
 
 		if (power != null) {

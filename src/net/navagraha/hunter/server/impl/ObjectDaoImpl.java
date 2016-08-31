@@ -28,7 +28,6 @@ public class ObjectDaoImpl implements ObjectDao {
 			tran.commit();
 			return obj;
 		} catch (Exception e) {
-			tran.rollback();
 			return null;
 		} finally {
 			if (session.isOpen())
@@ -57,6 +56,22 @@ public class ObjectDaoImpl implements ObjectDao {
 			session = sessionFactory.openSession();
 			tran = session.beginTransaction();
 			session.update(obj);
+			tran.commit();
+		} catch (Exception e) {
+			tran.rollback();
+		} finally {
+			if (session.isOpen())
+				session.close();
+		}
+	}
+
+	// 根据HQL执行增删改语句
+	public void executeUpdate(String hql) {
+		try {
+			session = sessionFactory.openSession();
+			tran = session.beginTransaction();
+			Query query = session.createQuery(hql);
+			query.executeUpdate();
 			tran.commit();
 		} catch (Exception e) {
 			tran.rollback();
@@ -129,7 +144,6 @@ public class ObjectDaoImpl implements ObjectDao {
 			tran.commit();
 			return list;
 		} catch (Exception e) {
-			tran.rollback();
 			return new ArrayList<Object>();
 		} finally {
 			if (session.isOpen())
@@ -152,7 +166,6 @@ public class ObjectDaoImpl implements ObjectDao {
 			tran.commit();
 			return list;
 		} catch (Exception e) {
-			tran.rollback();
 			return new ArrayList<Object>();
 		} finally {
 			if (session.isOpen())
@@ -186,7 +199,6 @@ public class ObjectDaoImpl implements ObjectDao {
 			tran.commit();
 			return list;
 		} catch (Exception e) {
-			tran.rollback();
 			return new ArrayList<Object>();
 		} finally {
 			if (session.isOpen())
@@ -205,7 +217,6 @@ public class ObjectDaoImpl implements ObjectDao {
 			tran.commit();
 			return i;
 		} catch (Exception e) {
-			tran.rollback();
 			return 0;
 		} finally {
 			if (session.isOpen())
@@ -219,12 +230,30 @@ public class ObjectDaoImpl implements ObjectDao {
 			session = sessionFactory.openSession();
 			tran = session.beginTransaction();
 			Query query = session.createQuery(hql);
-			int i = ((Long) query.iterate().next()).intValue();
+			int i = (Long.valueOf(query.iterate().next().toString()))
+					.intValue();
 			tran.commit();
 			return i;
 		} catch (Exception e) {
-			tran.rollback();
 			return 0;
+		} finally {
+			if (session.isOpen())
+				session.close();
+		}
+	}
+
+	// 根据搜索条件获得对象数量(给定返回个数)
+	public List<?> getSomeObjectListBycond(String hql, int limit) {
+		try {
+			session = sessionFactory.openSession();
+			tran = session.beginTransaction();
+			Query query = session.createQuery(hql);
+			query.setMaxResults(limit);
+			List<?> list = query.list();
+			tran.commit();
+			return list;
+		} catch (Exception e) {
+			return new ArrayList<Object>();
 		} finally {
 			if (session.isOpen())
 				session.close();
@@ -253,7 +282,6 @@ public class ObjectDaoImpl implements ObjectDao {
 			tran.commit();
 			return list;
 		} catch (Exception e) {
-			tran.rollback();
 			return new ArrayList<Object>();
 		} finally {
 			if (session.isOpen())
@@ -275,7 +303,6 @@ public class ObjectDaoImpl implements ObjectDao {
 			tran.commit();
 			return list;
 		} catch (Exception e) {
-			tran.rollback();
 			return new ArrayList<Object>();
 		} finally {
 			if (session.isOpen())
@@ -299,7 +326,6 @@ public class ObjectDaoImpl implements ObjectDao {
 			tran.commit();
 			return list;
 		} catch (Exception e) {
-			tran.rollback();
 			return new ArrayList<Object>();
 		} finally {
 			if (session.isOpen())
@@ -324,7 +350,6 @@ public class ObjectDaoImpl implements ObjectDao {
 			tran.commit();
 			return list;
 		} catch (Exception e) {
-			tran.rollback();
 			return new ArrayList<Object>();
 		} finally {
 			if (session.isOpen())
@@ -350,7 +375,6 @@ public class ObjectDaoImpl implements ObjectDao {
 			tran.commit();
 			return list1;
 		} catch (Exception e) {
-			tran.rollback();
 			return new ArrayList<Object>();
 		} finally {
 			if (session.isOpen())

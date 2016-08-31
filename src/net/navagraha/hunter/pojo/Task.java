@@ -23,6 +23,7 @@ public class Task implements java.io.Serializable {
 	private Integer tasReceivenum;
 	private Integer tasFinishnum;
 	private String tasEvaluate;
+	private Integer tasCredit;
 	private Set<Apply> tasApplies = new HashSet<Apply>(0);
 
 	// Property accessors
@@ -161,6 +162,14 @@ public class Task implements java.io.Serializable {
 
 	public Users getTasUser() {
 		return tasUser;
+	}
+
+	public void setTasCredit(Integer tasCredit) {
+		this.tasCredit = tasCredit;
+	}
+
+	public Integer getTasCredit() {
+		return tasCredit;
 	}
 
 }

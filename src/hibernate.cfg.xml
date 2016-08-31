@@ -39,6 +39,7 @@
 		<mapping resource="net/navagraha/hunter/pojo/Users.hbm.xml" />
 		<mapping resource="net/navagraha/hunter/pojo/Apply.hbm.xml" />
 		<mapping resource="net/navagraha/hunter/pojo/Money.hbm.xml" />
+		<mapping resource="net/navagraha/hunter/pojo/Census.hbm.xml" />
 
 	</session-factory>
 

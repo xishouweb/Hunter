@@ -8,6 +8,7 @@ import java.util.Random;
 import java.util.Set;
 
 import net.navagraha.hunter.pojo.Apply;
+import net.navagraha.hunter.pojo.Census;
 import net.navagraha.hunter.pojo.Tag;
 import net.navagraha.hunter.pojo.Task;
 import net.navagraha.hunter.pojo.Users;
@@ -49,18 +50,25 @@ public class UserAction {
 
 	private static ObjectDao objectDao = new ObjectDaoImpl();
 
+	/** 获取Dao */
+	public ObjectDao giveDao() {
+		if (objectDao == null)
+			objectDao = new ObjectDaoImpl();
+		return objectDao;
+	}
+
 	// #用户激活
 	public String activate() {
 
-		// 查询已激活学生人数
-		int size = objectDao
-				.getObjectSizeBycond("select count(*) from Users where useIscompany==0");
+		// TODO 查询已激活学生人数,内测限定100(投入时取消)
+		int size = giveDao().getObjectSizeBycond(
+				"select count(*) from Users where useIscompany==0");
 		if (size > 100) {
 			setCode("20");
 			return "success";
 		}
 
-		List<?> list = objectDao.getObjectListByfieldInActivate("Users",
+		List<?> list = giveDao().getObjectListByfieldInActivate("Users",
 				"useSno", useSno);
 		Users user = list.size() > 0 ? (Users) list.get(0) : null;
 
@@ -73,7 +81,7 @@ public class UserAction {
 				user.setUseIscompany(0);
 				user.setUsePhone(usePhone);
 				user.setUseEmei(useEmei);
-				objectDao.update(user);
+				giveDao().update(user);
 				setCode("1");// 激活成功
 			} else
 				setCode("7");// 手机验证码验证不成功
@@ -85,41 +93,21 @@ public class UserAction {
 
 	// #用户登录
 	public String login() {
-		List<?> list1 = objectDao.getObjectListByfield("Users", "usePhone",
+		List<?> list1 = giveDao().getObjectListByfield("Users", "usePhone",
 				usePhone);
 		if (list1.size() > 0) {
-			List<?> list = objectDao.check4List("Users", usePhone, usePwd);
+			List<?> list = giveDao().check4List("Users", usePhone, usePwd);
 			if (list.size() > 0) {
 				Users user = (Users) list.get(0);
 				if (user.getUseIsprotect() == 1) {
 					if (user.getUseEmei().equals(useEmei)) {
-						ServletActionContext.getRequest().getSession()
-								.setAttribute("Users", user);// 将登陆用户保存到session
-
-						// 统计当前账户余额
-						Object object = ServletActionContext
-								.getServletContext().getAttribute("Money");
-						if (object == null) {
-							int userNum = Integer
-									.parseInt(objectDao
-											.getObjectListBycond(
-													"select count(*) from Users where useIscompany!=2")
-											.get(0).toString());
-							ServletActionContext.getServletContext()
-									.setAttribute("Money", userNum * 10 - 10);
-						} else
-							ServletActionContext.getServletContext()
-									.setAttribute("Money",
-											(Integer) object - 10);
-						do4Tag(user);// 记录标签
+						do4User(user);// 记录用户
 						setCode("1");// 登录成功
 					} else {
 						setCode("8");// 不是本机登陆
 					}
 				} else {
-					ServletActionContext.getRequest().getSession()
-							.setAttribute("Users", user);// 将登陆用户保存到session
-					do4Tag(user);// 记录标签
+					do4User(user);// 记录用户
 					setCode("1");// 登录成功
 				}
 			} else
@@ -131,9 +119,52 @@ public class UserAction {
 		return "success";
 	}
 
-	// #记录标签
-	private void do4Tag(Users user) {
-		List<?> list = objectDao.getObjectListByfield("Tag", "tagUser", user);
+	// #记录用户
+	private void do4User(Users user) {
+		ServletActionContext.getRequest().getSession().setAttribute("Users",
+				user);// 将登陆用户保存到session
+
+		user.setUseIsonline(1);// 设置用户在线状态
+		user.setUseIslogin(1);// 设置该用户今日已登录
+		giveDao().update(user);
+
+		// 更新今日同时在线人数
+		Date date = new Date();
+		String month = new SimpleDateFormat("yyyy-MM").format(date);
+		int day = Integer.parseInt(new SimpleDateFormat("dd").format(date));
+		// 今日此时同时在线人数
+		int onlineNum = giveDao().getObjectSizeBycond(
+				"select count(*) from Users where useIsonline=1");
+
+		List<?> li = giveDao().getObjectListBycond(
+				"from Census where cenMonth='" + month + "' and cenDay=" + day);
+		Census census;
+		if (li.size() < 1) {
+			census = new Census();
+			census.setCenMonth(month);
+			census.setCenDay(day);
+			census.setCenOnlinenum(0);
+		} else
+			census = (Census) li.get(0);
+		if (onlineNum > census.getCenOnlinenum())
+			census.setCenOnlinenum(onlineNum);
+		giveDao().saveOrUpdate(census);
+
+		// 统计当前账户余额
+		Object object = ServletActionContext.getServletContext().getAttribute(
+				"Money");
+		if (object == null) {
+			int userNum = Integer.parseInt(giveDao().getObjectListBycond(
+					"select count(*) from Users where useIscompany!=2").get(0)
+					.toString());
+			ServletActionContext.getServletContext().setAttribute("Money",
+					userNum * 10 - 10);
+		} else
+			ServletActionContext.getServletContext().setAttribute("Money",
+					(Integer) object - 10);
+
+		// 记录标签
+		List<?> list = giveDao().getObjectListByfield("Tag", "tagUser", user);
 		Tag tag = list.size() > 0 ? (Tag) list.get(0) : new Tag();
 
 		// 记录登录时刻
@@ -172,9 +203,9 @@ public class UserAction {
 		if (compare(D, current) && compare(current, D1))
 			d++;
 		tag.setTagLogtime(a + "," + b + "," + c + "," + d);
-		objectDao.saveOrUpdate(tag);
+		giveDao().saveOrUpdate(tag);
 		ServletActionContext.getRequest().getSession().setAttribute("Logtime",
-				new Date().toLocaleString());// 存储登录时间
+				new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date()));// 存储登录时间
 	}
 
 	/** 比较两个时间 */
@@ -201,6 +232,33 @@ public class UserAction {
 
 	// 用户注销
 	public String quit() {
+		// 计算登录时长
+		Object object1 = ServletActionContext.getRequest().getSession()
+				.getAttribute("Logtime");
+		long diff = 0;
+		if (object1 != null) {
+			String Logtime = object1.toString();
+			diff = getMinutesBetween(
+					new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
+							.format(new Date()), Logtime);
+		}
+
+		// 将登录时长加到数据库
+		Object object2 = ServletActionContext.getRequest().getSession()
+				.getAttribute("Users");
+		Users user = object2 != null ? (Users) object2 : null;
+		if (user != null) {
+			List<?> list = giveDao().getObjectListByfield("Tag", "tagUser",
+					user);
+			if (list.size() > 0) {
+				Tag tag = (Tag) list.get(0);
+				tag.setTagTimeout(tag.getTagTimeout()
+						+ Integer.valueOf("" + diff));
+				giveDao().update(tag);
+			}
+
+		} else
+			return "success";// 非正规渠道注销
 
 		// 将账户余额自动增加8
 		Object object = ServletActionContext.getServletContext().getAttribute(
@@ -210,31 +268,9 @@ public class UserAction {
 					(Integer) object + 8);
 		}
 
-		// 计算登录时长
-		Object object1 = ServletActionContext.getServletContext().getAttribute(
-				"Logtime");
-		long diff = 0;
-		if (object1 != null) {
-			String Logtime = object1.toString();
-			diff = getMinutesBetween(new Date().toLocaleString(), Logtime);
-
-		}
-
-		// 将登录时长加到数据库
-		Object object2 = ServletActionContext.getServletContext().getAttribute(
-				"Users");
-		Users user = object2 != null ? (Users) object2 : null;
-		if (user != null) {
-			List<?> list = objectDao.getObjectListByfield("Tag", "tagUser",
-					user);
-			if (list.size() > 0) {
-				Tag tag = (Tag) list.get(0);
-				tag.setTagTimeout(tag.getTagTimeout()
-						+ Integer.valueOf("" + diff));
-				objectDao.update(tag);
-			}
-
-		}
+		// 设置用户在线状态
+		user.setUseIsonline(0);
+		giveDao().update(user);
 
 		ServletActionContext.getRequest().getSession().invalidate();// 清空session
 
@@ -261,10 +297,9 @@ public class UserAction {
 		Users user = object != null ? (Users) object : null;
 
 		if (user != null) {
-			System.out.println(useAlipay);
 			user.setUseAlipay(useAlipay);
 			user.setUseName(useName);
-			objectDao.update(user);
+			giveDao().update(user);
 			setCode("1");// 修改收款账户成功
 		} else
 			setCode("0");// 修改收款账户失败
@@ -275,7 +310,7 @@ public class UserAction {
 	// 用户验证短信发送
 	public String sendPhone() {
 		if (useSno != null) {// 表示验证码模式-yzm
-			List<?> list = objectDao.getObjectListByfieldInActivate("Users",
+			List<?> list = giveDao().getObjectListByfieldInActivate("Users",
 					"useSno", useSno);
 			Users user = list.size() > 0 ? (Users) list.get(0) : null;
 			if (user != null && user.getUseId() > 0) {
@@ -298,7 +333,7 @@ public class UserAction {
 				setCode("4");// 考号/学号不存在
 			}
 		} else {// 忘记密码模式-pwd
-			List<?> list = objectDao.getObjectListByfield("Users", "usePhone",
+			List<?> list = giveDao().getObjectListByfield("Users", "usePhone",
 					usePhone);
 			Users user = list.size() > 0 ? (Users) list.get(0) : null;
 			if (user != null) {
@@ -318,7 +353,7 @@ public class UserAction {
 	private String sendPhoneCode() {
 
 		if (useSno != null) {// 表示验证码模式-yzm
-			List<?> list = objectDao.getObjectListByfieldInActivate("Users",
+			List<?> list = giveDao().getObjectListByfieldInActivate("Users",
 					"useSno", useSno);
 			Users user = list.size() > 0 ? (Users) list.get(0) : null;
 			if (user != null && user.getUseId() > 0) {
@@ -337,7 +372,7 @@ public class UserAction {
 				setCode("4");// 考号/学号不存在
 			}
 		} else {// 忘记密码模式-pwd
-			List<?> list = objectDao.getObjectListByfield("Users", "usePhone",
+			List<?> list = giveDao().getObjectListByfield("Users", "usePhone",
 					usePhone);
 			Users user = list.size() > 0 ? (Users) list.get(0) : null;
 			if (user != null) {
@@ -368,7 +403,7 @@ public class UserAction {
 
 		if (user != null && user.getUsePwd().equals(usePwd)) {
 			user.setUsePwd(newUsepassword);
-			objectDao.update(user);
+			giveDao().update(user);
 			setCode("1");// 修改密码成功
 		} else
 			setCode("3");// 原密码不正确
@@ -385,7 +420,7 @@ public class UserAction {
 
 		if (user != null) {
 			setUseSno(user.getUseSno());
-			List<?> list = objectDao.getObjectListByfield("Users", "usePhone",
+			List<?> list = giveDao().getObjectListByfield("Users", "usePhone",
 					usePhone);
 			if (list.size() > 0) {
 				setCode("18");// 手机号已存在
@@ -403,7 +438,7 @@ public class UserAction {
 				.getAttribute("Users");// 将登陆用户取出
 		Users user = object != null ? (Users) object : null;
 
-		List<?> list = objectDao.getObjectListByfield("Users", "useNickname",
+		List<?> list = giveDao().getObjectListByfield("Users", "useNickname",
 				useNickname);
 
 		if (user != null && user.getUseId() > 0) {
@@ -422,7 +457,7 @@ public class UserAction {
 			user.setUseDepart(useDepart);
 			user.setUseMajor(useMajor);
 			try {
-				objectDao.update(user);
+				giveDao().update(user);
 				setCode("1");
 			} catch (Exception e) {
 				setCode("0");
@@ -470,7 +505,7 @@ public class UserAction {
 				user.setUseIsprotect(1);
 			else
 				user.setUseIsprotect(0);
-			objectDao.update(user);
+			giveDao().update(user);
 			setCode("1");
 		} else
 			setCode("0");
@@ -489,7 +524,7 @@ public class UserAction {
 				user.setUseShowsign(1);
 			else
 				user.setUseShowsign(0);
-			objectDao.update(user);
+			giveDao().update(user);
 			setCode("1");
 		} else
 			setCode("0");
@@ -500,11 +535,11 @@ public class UserAction {
 	// 用户点赞
 	public String dianZan() {
 
-		Object object = objectDao.getObjectById(Users.class, useId);
+		Object object = giveDao().getObjectById(Users.class, useId);
 		Users user = object != null ? (Users) object : null;
 		if (user != null && user.getUseId() > 0 && user.getUseIscompany() != 2) {
 			user.setUseMoods(user.getUseMoods() + 1);
-			objectDao.update(user);
+			giveDao().update(user);
 			setCode("1");// 点赞成功
 		} else
 			setCode("0");// 点赞失败
@@ -515,7 +550,7 @@ public class UserAction {
 	// 根据用户ID获取用户
 	public String giveUserById() {
 
-		Object object = objectDao.getObjectById(Users.class, useId);
+		Object object = giveDao().getObjectById(Users.class, useId);
 		Users user = object != null ? (Users) object : null;
 		if (user.getUseShowsign() == 1 && user.getUseIscompany() != 2)// 用户没有隐身
 			json.put("User", user);
@@ -530,7 +565,7 @@ public class UserAction {
 				+ " or useName=" + useCond + " or useSno=" + useCond
 				+ " or usePhone=" + useCond + ")";
 
-		List<?> list = objectDao.getObjectListBycond("Users", cond);
+		List<?> list = giveDao().getObjectListBycond("Users", cond);
 		List<Users> users = new ArrayList<Users>();
 		for (Object object : list) {
 			users.add((Users) object);
@@ -542,7 +577,7 @@ public class UserAction {
 
 	// 根据任务查找接受者用户
 	public String giveBeUsersByTasId() {
-		Object object = objectDao.getObjectById(Task.class, tasId);
+		Object object = giveDao().getObjectById(Task.class, tasId);
 		Task task = object != null ? (Task) object : null;
 		if (task != null) {
 			Set<Apply> set = task.getTasApplies();// 接受者用户们

@@ -53,6 +53,9 @@
         <property name="tasEvaluate" type="java.lang.String">
             <column name="tas_evaluate" length="65535" />
         </property>
+        <property name="tasCredit" type="java.lang.Integer">
+            <column name="tas_credit" />
+        </property>
         <set name="tasApplies" inverse="true" order-by="app_Id" fetch="select" lazy="false">
             <key>
                 <column name="app_task" not-null="true" />

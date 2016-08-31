@@ -21,6 +21,7 @@ import net.navagraha.hunter.pojo.Users;
 import net.navagraha.hunter.server.ObjectDao;
 import net.navagraha.hunter.server.impl.ObjectDaoImpl;
 import net.navagraha.hunter.tool.PhoneCodeTool;
+import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 import net.sf.json.JsonConfig;
 
@@ -29,7 +30,6 @@ import org.apache.struts2.ServletActionContext;
 public class TaskAction {
 
 	// Fields
-
 	private Integer tasId;
 	private String tasTitle;
 	private String tasContact;
@@ -39,10 +39,12 @@ public class TaskAction {
 	private String tasState;
 	private String tasTimeout;
 	private Integer tasRulenum;
+	private String tasEvaluate;
+	private Integer tasCredit;
 
 	private static ObjectDao objectDao = new ObjectDaoImpl();
 	private static PropertyUtil propertyUtil = new PropertyUtil(
-			"Cons.properties");// 初始化参数配置文件
+			"cons.properties");// 初始化参数配置文件
 	private static int HOME_PerPageRow;
 	private static int LOG_PerPageRow;
 	private static int PERSON_PerPageRow;
@@ -68,16 +70,21 @@ public class TaskAction {
 	// 前台传入
 	private Integer curPage;
 	private Integer appId;
-	private Integer powCredit;
-	private Integer isFast;
+
 	private String appReason;
-	private String tasEvaluate;
 
 	// 反馈到前台
 
 	public String code;
 
 	public static JSONObject json = new JSONObject();
+
+	/** 获取Dao */
+	public ObjectDao giveDao() {
+		if (objectDao == null)
+			objectDao = new ObjectDaoImpl();
+		return objectDao;
+	}
 
 	// 发布任务
 	public String publishTask() {
@@ -96,7 +103,8 @@ public class TaskAction {
 			task.setTasContact(tasContact);
 			task.setTasContent(tasContent);
 			Date date = new Date();
-			task.setTasTime(date.toLocaleString());
+			task.setTasTime(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
+					.format(date));
 
 			Object str = ServletActionContext.getRequest().getSession()
 					.getAttribute("ImgPath");
@@ -105,17 +113,23 @@ public class TaskAction {
 				ServletActionContext.getRequest().getSession().setAttribute(
 						"ImgPath", null);
 			}
-
 			if (tasType.equals("加急个人")) {// 加急个人任务
-				task.setTasTimeout(tasTimeout);
+				task.setTasTimeout(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
+						.format(date).substring(
+								0,
+								new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
+										.format(date).indexOf(" "))
+						+ " " + tasTimeout + ":00");
 			}
 			if (tasType.equals("个人")) {// 个人任务
 				date.setHours(date.getHours() + 48);// 默认显示2天
-				task.setTasTimeout(date.toLocaleString());
+				task.setTasTimeout(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
+						.format(date));
 			}
 			if (tasType.equals("团队")) {// 团队任务
 				date.setHours(date.getHours() + 48);// 默认显示2天
-				task.setTasTimeout(date.toLocaleString());
+				task.setTasTimeout(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
+						.format(date));
 				task.setTasRulenum(tasRulenum);// 限定人数
 				task.setTasReceivenum(0);
 			}
@@ -162,13 +176,13 @@ public class TaskAction {
 					money.setMonType("特殊");// 平台奖励属于特殊
 					money.setMonTime(new SimpleDateFormat("yyyyMMdd")
 							.format(new Date()));
-					objectDao.save(money);
+					giveDao().save(money);
 				}
 				/** 打钱结束 */
 
 				task.setTasUser(user);
-				objectDao.update(user);
-				objectDao.save(task);
+				giveDao().update(user);
+				giveDao().save(task);
 				setCode("1");
 			} catch (Exception e) {
 				setCode("0");
@@ -181,7 +195,7 @@ public class TaskAction {
 	// 用户接受任务
 	public String receiveTask() {
 
-		Object object = objectDao.getObjectById(Task.class, tasId);
+		Object object = giveDao().getObjectById(Task.class, tasId);
 		Task task = object != null ? (Task) object : null;
 
 		Object object1 = ServletActionContext.getRequest().getSession()
@@ -197,7 +211,7 @@ public class TaskAction {
 				}
 			}
 			// 记录tag
-			List<?> list = objectDao.getObjectListByfield("Tag", "tagUser",
+			List<?> list = giveDao().getObjectListByfield("Tag", "tagUser",
 					user);
 			Tag tag = list.size() > 0 ? (Tag) list.get(0) : null;
 			if (tag != null) {
@@ -221,13 +235,15 @@ public class TaskAction {
 				if (task.getTasType().equals("团队"))
 					e++;
 				tag.setTagTasktype(c + "," + d + "," + e);
-				objectDao.update(tag);
+				giveDao().update(tag);
 			}
 			// 记录tag结束
 
 			Apply apply = new Apply();
 			apply.setAppBeUser(user);
 			apply.setAppTask(task);
+			apply.setAppTime(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
+					.format(new Date()));
 
 			if (task.getTasType().equals("加急个人")) {
 				if (task.getTasState() == 0) {// 任务可接
@@ -235,12 +251,12 @@ public class TaskAction {
 					apply.setAppReason("加急任务，自动申请通过");
 					apply.setAppState(1);
 					task.setTasState(2);// 任务进行中
-					objectDao.save(apply);
+					giveDao().save(apply);
 
 					Set<Apply> set = new HashSet<Apply>(0);
 					set.add(apply);
 					task.setTasApplies(set);
-					objectDao.update(task);
+					giveDao().update(task);
 					setCode("1");
 					return "success";
 				} else {
@@ -252,10 +268,10 @@ public class TaskAction {
 				if (task.getTasState() == 0 || task.getTasState() == 1) {
 					apply.setAppReason(appReason);
 					apply.setAppState(0);
-					objectDao.save(apply);
+					giveDao().save(apply);
 
 					task.setTasState(1);// 任务申请中
-					objectDao.update(task);
+					giveDao().update(task);
 					setCode("1");
 					return "success";
 				} else {
@@ -271,10 +287,10 @@ public class TaskAction {
 
 	// 取消申请任务(仅限申请中任务，即appState=0)
 	public String backReceiveTask() {
-		Object object = objectDao.getObjectById(Apply.class, appId);
+		Object object = giveDao().getObjectById(Apply.class, appId);
 		Apply apply = object != null ? (Apply) object : null;
 		if (apply != null && apply.getAppState() == 0) {
-			objectDao.delete(apply);
+			giveDao().delete(apply);
 			setCode("1");// 操作成功
 			return "success";
 		} else {
@@ -286,22 +302,20 @@ public class TaskAction {
 
 	// 用户审核通过申请(非加急)
 	public String checkSuccessTask() {
-
-		Object object = objectDao.getObjectById(Apply.class, appId);
+		Object object = giveDao().getObjectById(Apply.class, appId);
 		Apply apply = object != null ? (Apply) object : null;
-		Task task = apply.getAppTask();
 
 		if (apply != null) {
-
+			Task task = apply.getAppTask();
 			if (task != null && task.getTasState() == 1) {
 				// 其他申请自动设置为不通过
-				List<?> tasList = objectDao.getObjectListByfield("Apply",
+				List<?> tasList = giveDao().getObjectListByfield("Apply",
 						"appTask", task);
 				for (Object object2 : tasList) {
 					Apply apply2 = (Apply) object2;
 					if (apply2.getAppId() != appId) {
 						apply2.setAppState(2);// 不通过
-						objectDao.update(apply2);
+						giveDao().update(apply2);
 					}
 				}
 
@@ -345,48 +359,48 @@ public class TaskAction {
 					money.setMonType("特殊");// 平台奖励属于特殊
 					money.setMonTime(new SimpleDateFormat("yyyyMMdd")
 							.format(new Date()));
-					objectDao.save(money);
+					giveDao().save(money);
 				}
 				/** 打钱结束 */
 
-				objectDao.update(user);
+				giveDao().update(user);
 
 				if (task.getTasType().equals("个人")) {
 
 					apply.setAppState(1);// 通过
-					objectDao.update(apply);
+					giveDao().update(apply);
 
 					task.setTasState(2);// 审核成功,任务进行中
 					Set<Apply> set = new HashSet<Apply>(0);
 					set.add(apply);
 					task.setTasApplies(set);
-					objectDao.update(task);
+					giveDao().update(task);
 
 					setCode("1");// 操作成功
 					return "success";
 				} else {
 					if (task.getTasReceivenum() == task.getTasRulenum() - 1) {// 任务人数已达齐，开始进行
 						apply.setAppState(1);// 通过
-						objectDao.update(apply);
+						giveDao().update(apply);
 
 						task.setTasState(2);// 审核成功,任务进行中
 						Set<Apply> set = task.getTasApplies();
 						set.add(apply);
 						task.setTasApplies(set);
-						objectDao.update(task);
+						giveDao().update(task);
 
 						setCode("1");// 操作成功
 						return "success";
 					} else if (task.getTasReceivenum() < task.getTasRulenum() - 1) {// 任务人数未达齐
 						apply.setAppState(1);// 通过
-						objectDao.update(apply);
+						giveDao().update(apply);
 
 						task.setTasState(1);// 审核成功,任务未进行
 						Set<Apply> set = task.getTasApplies();
 						set = set.size() < 1 ? new HashSet<Apply>(0) : set;
 						set.add(apply);
 						task.setTasApplies(set);
-						objectDao.update(task);
+						giveDao().update(task);
 
 						setCode("1");// 操作成功
 						return "success";
@@ -408,14 +422,14 @@ public class TaskAction {
 	// 用户审核不通过申请(非加急)
 	public String checkFalseTask() {
 
-		Object object = objectDao.getObjectById(Apply.class, appId);
+		Object object = giveDao().getObjectById(Apply.class, appId);
 		Apply apply = object != null ? (Apply) object : null;
 		Task task = apply.getAppTask();
 
 		if (task != null && task.getTasState() == 1) {
 			if (apply != null) {
 				apply.setAppState(2);
-				objectDao.update(apply);
+				giveDao().update(apply);
 				setCode("1");
 				return "success";
 			} else {
@@ -431,7 +445,7 @@ public class TaskAction {
 	// 用户要完成任务
 	public String finishTask() {
 
-		Object object = objectDao.getObjectById(Task.class, tasId);
+		Object object = giveDao().getObjectById(Task.class, tasId);
 		Task task = object != null ? (Task) object : null;
 
 		if (task != null) {
@@ -441,9 +455,14 @@ public class TaskAction {
 					setCode("15");// 任务已失败
 					return "success";
 				} else {
-					task.setTasFinishtime(new Date().toLocaleString());
+					if (task.getTasState() == 3) {
+						setCode("14");// 已点击了申请完成，不必重新点击申请完成
+						return "success";
+					}
+					task.setTasFinishtime(new SimpleDateFormat(
+							"yyyy-MM-dd HH:mm:ss").format(new Date()));
 					task.setTasState(3);// 提交审核
-					objectDao.update(task);
+					giveDao().update(task);
 					PhoneCodeTool.send(task.getTasUser().getUsePhone(), task
 							.getTasTitle(), "task");// 短信提示发布者任务已完成
 					setCode("1");// 操作成功
@@ -452,10 +471,11 @@ public class TaskAction {
 			} else {// 团队任务
 				if (task.getTasFinishnum() == task.getTasRulenum() - 1) {// 任务人数已达齐，开始申请审核
 
-					task.setTasFinishtime(new Date().toLocaleString());
+					task.setTasFinishtime(new SimpleDateFormat(
+							"yyyy-MM-dd HH:mm:ss").format(new Date()));
 					task.setTasFinishnum(task.getTasRulenum());
 					task.setTasState(3);// 提交审核
-					objectDao.update(task);
+					giveDao().update(task);
 					PhoneCodeTool.send(task.getTasUser().getUsePhone(), task
 							.getTasTitle(), "task");// 短信提示发布者任务已完成
 					setCode("1");// 操作成功
@@ -465,7 +485,7 @@ public class TaskAction {
 
 					task.setTasFinishnum(task.getTasFinishnum() + 1);
 					task.setTasState(2);// 任务仍是进行中
-					objectDao.update(task);
+					giveDao().update(task);
 					setCode("1");// 操作成功
 					return "success";
 				} else {
@@ -483,7 +503,7 @@ public class TaskAction {
 	// 用户允许通过任务
 	public String successTask() {
 
-		Object object = objectDao.getObjectById(Task.class, tasId);
+		Object object = giveDao().getObjectById(Task.class, tasId);
 		Task task = object != null ? (Task) object : null;
 
 		if (task != null && task.getTasState() == 3) {
@@ -497,7 +517,7 @@ public class TaskAction {
 
 					if (apply.getAppState() == 1) {// 任务的真实接受者
 						apply.setAppState(3);// 任务成功
-						objectDao.update(apply);
+						giveDao().update(apply);
 
 						Users user = apply.getAppBeUser();
 
@@ -519,23 +539,23 @@ public class TaskAction {
 							money.setMonType(task.getTasType());
 						money.setMonTime(new SimpleDateFormat("yyyyMMdd")
 								.format(new Date()));
-						objectDao.save(money);
+						giveDao().save(money);
 						/** 打钱结束 */
 
 						/** 能力 **/
 						// 获取任务接收者的power
-						List<?> list3 = objectDao.getObjectListByfield("Power",
+						List<?> list3 = giveDao().getObjectListByfield("Power",
 								"powUser", user);
 						Power power;
-						if (powCredit != null && list3.size() > 0) {
+						if (tasCredit != null && list3.size() > 0) {
 
 							power = (Power) list3.get(0);
 							power
 									.setPowCredit(power.getPowCredit()
-											+ powCredit);
-							if (isFast == 1)
+											+ tasCredit);
+							if (tasCredit > 3)
 								power.setPowFast(power.getPowFast() + 1);
-							objectDao.update(power);
+							giveDao().update(power);
 						}
 						/** 能力结束 **/
 
@@ -544,7 +564,8 @@ public class TaskAction {
 						Pay payOut, payIn;
 
 						// 获取任务发布者的pay
-						List<?> list1 = objectDao.getObjectListByfield("Pay",
+						List<?> list1 = giveDao().getObjectListByfield(
+								"Pay",
 								new String[] { "payTime", "payUser" },
 								new Object[] { sdf.format(new Date()),
 										task.getTasUser() });
@@ -562,10 +583,10 @@ public class TaskAction {
 							payOut.setPayOut(task.getTasPrice() + 0.0);
 							payOut.setPayUser(task.getTasUser());
 						}
-						objectDao.saveOrUpdate(payOut);
+						giveDao().saveOrUpdate(payOut);
 
 						// 获取任务收入者的pay
-						List<?> list2 = objectDao.getObjectListByfield("Pay",
+						List<?> list2 = giveDao().getObjectListByfield("Pay",
 								new String[] { "payTime", "payUser" },
 								new Object[] { sdf.format(new Date()), user });
 
@@ -595,14 +616,15 @@ public class TaskAction {
 										* (1 - SUCCESS_TAX));
 							payIn.setPayUser(user);
 						}
-						objectDao.saveOrUpdate(payIn);
+						giveDao().saveOrUpdate(payIn);
 						/** 支付日志结束 **/
 
 					}
 				}
 				task.setTasState(4);// 任务成功
 				task.setTasEvaluate(tasEvaluate);
-				objectDao.update(task);
+				task.setTasCredit(tasCredit);
+				giveDao().update(task);
 
 				setCode("1");// 操作成功
 				return "success";
@@ -619,7 +641,7 @@ public class TaskAction {
 	// 用户不允许通过任务
 	public String falseTask() {
 
-		Object object = objectDao.getObjectById(Task.class, tasId);
+		Object object = giveDao().getObjectById(Task.class, tasId);
 		Task task = object != null ? (Task) object : null;
 
 		if (task != null && task.getTasState() == 3) {
@@ -634,21 +656,17 @@ public class TaskAction {
 
 					if (apply.getAppState() == 1) {// 任务的真实接受者
 						apply.setAppState(4);// 任务失败
-						objectDao.update(apply);
+						giveDao().update(apply);
 
 						Users beUser = apply.getAppBeUser();
 						// 获取任务接收者的power
-						List<?> list3 = objectDao.getObjectListByfield("Power",
+						List<?> list3 = giveDao().getObjectListByfield("Power",
 								"powUser", beUser);
 						Power power;
-						if (powCredit != null) {
-
-							if (list3.size() > 0) {
-								power = (Power) list3.get(0);
-								power.setPowCredit(power.getPowCredit()
-										- powCredit);
-								objectDao.update(power);
-							}
+						if (list3.size() > 0) {
+							power = (Power) list3.get(0);
+							power.setPowCredit(power.getPowCredit() - 4);// 失败任务减4分
+							giveDao().update(power);
 						}
 					}
 				}
@@ -656,7 +674,7 @@ public class TaskAction {
 
 				if (task.getTasState() == 6) {// 任务已失效，即失败
 					task.setTasState(5);// 任务失败
-					objectDao.update(task);
+					giveDao().update(task);
 					Users user = task.getTasUser();
 
 					/** 返钱 */
@@ -676,7 +694,7 @@ public class TaskAction {
 						money.setMonType(task.getTasType());
 					money.setMonTime(new SimpleDateFormat("yyyyMMdd")
 							.format(new Date()));
-					objectDao.save(money);
+					giveDao().save(money);
 					/** 返钱结束 */
 
 					/** 支付日志 **/
@@ -684,7 +702,7 @@ public class TaskAction {
 					Pay payOut;
 
 					// 获取任务发布者的pay
-					List<?> list1 = objectDao.getObjectListByfield("Pay",
+					List<?> list1 = giveDao().getObjectListByfield("Pay",
 							new String[] { "payTime", "payUser" },
 							new Object[] { sdf.format(new Date()), user });
 
@@ -701,16 +719,15 @@ public class TaskAction {
 						payOut.setPayOut(task.getTasPrice() * FALSE_TAX);
 						payOut.setPayUser(task.getTasUser());
 					}
-					objectDao.saveOrUpdate(payOut);
+					giveDao().saveOrUpdate(payOut);
 					/** 支付日志结束 **/
 
 					setCode("1");// 操作成功
 					return "success";
 				} else {
-
 					task.setTasState(0);// 任务已发布，继续可接
 					task.setTasApplies(null);// 接任务人清空
-					objectDao.update(task);
+					giveDao().update(task);
 
 					setCode("1");// 操作成功
 					return "success";
@@ -730,8 +747,11 @@ public class TaskAction {
 
 		json = new JSONObject();
 
-		List<?> list = objectDao.pageListWithCond("Task", curPage,
-				HOME_PerPageRow, "where tasType='" + tasType
+		List<?> list = giveDao().pageListWithCond(
+				"Task",
+				curPage,
+				HOME_PerPageRow,
+				"where tasType='" + tasType
 						+ "' and  tasState in (0,1) order by tasTime desc");
 		List<Task> taskList = new ArrayList<Task>();
 		for (Object object : list) {
@@ -749,9 +769,9 @@ public class TaskAction {
 
 		// 放入总页数
 		if (curPage == 0) {
-			int size = objectDao
-					.getObjectSizeBycond("select count(*) from Task where tasType='"
-							+ tasType + "' and  tasState in (0,1)");
+			int size = giveDao().getObjectSizeBycond(
+					"select count(*) from Task where tasType='" + tasType
+							+ "' and  tasState in (0,1)");
 			json.put("size", size);
 		}
 
@@ -763,10 +783,10 @@ public class TaskAction {
 
 		json = new JSONObject();
 
-		List<?> list0 = objectDao.getObjectListBycond("Users",
+		List<?> list0 = giveDao().getObjectListBycond("Users",
 				"where useIscompany=1");
 
-		List<?> list = objectDao
+		List<?> list = giveDao()
 				.pageListWithCond(
 						"Task",
 						curPage,
@@ -789,7 +809,7 @@ public class TaskAction {
 
 		// 放入总页数
 		if (curPage == 0) {
-			int size = objectDao
+			int size = giveDao()
 					.getObjectSizeBycond(
 							"select count(*) from Task where tasUser in(:list) and  tasState in (0,1)",
 							list0);
@@ -820,7 +840,7 @@ public class TaskAction {
 		if (tasState.equals("3"))// 显示申请中任务
 			cond += " and appState=0" + " order by appId desc";
 
-		List<?> list = objectDao.pageListWithCond("Apply", curPage,
+		List<?> list = giveDao().pageListWithCond("Apply", curPage,
 				LOG_PerPageRow, cond);
 		List<Task> taskList = new ArrayList<Task>();
 		for (Object object : list) {
@@ -830,15 +850,15 @@ public class TaskAction {
 		// 去掉json多余参数
 		JsonConfig jsonConfig = new JsonConfig();
 		jsonConfig.setIgnoreDefaultExcludes(false);
-		jsonConfig.setExcludes(new String[] { "tasApplies", "tasUser" });
+		jsonConfig.setExcludes(new String[] { "tasApplies", "tasUser" });// "tasApplies",
 		Map<String, List<?>> map = new HashMap<String, List<?>>();
 		map.put("TaskList", taskList);
 		json.putAll(map, jsonConfig);
 
 		// 放入总页数
 		if (curPage == 0) {
-			int size = objectDao
-					.getObjectSizeBycond("select count(*) from Apply " + cond);
+			int size = giveDao().getObjectSizeBycond(
+					"select count(*) from Apply " + cond);
 			json.put("size", size);
 		}
 
@@ -866,7 +886,7 @@ public class TaskAction {
 		if (tasState.equals("3"))// 显示申请中任务
 			cond += " and tasState=1" + " order by tasTime desc";
 
-		List<?> list = objectDao.pageListWithCond("Task", curPage,
+		List<?> list = giveDao().pageListWithCond("Task", curPage,
 				PERSON_PerPageRow, cond);
 		List<Task> taskList = new ArrayList<Task>();
 		for (Object object : list) {
@@ -883,8 +903,8 @@ public class TaskAction {
 
 		// 放入总页数
 		if (curPage == 0) {
-			int size = objectDao
-					.getObjectSizeBycond("select count(*) from Task " + cond);
+			int size = giveDao().getObjectSizeBycond(
+					"select count(*) from Task " + cond);
 			json.put("size", size);
 		}
 
@@ -893,17 +913,32 @@ public class TaskAction {
 
 	// 根据任务Id获取相应的申请
 	public String giveApplyByTasId() {
+		json = new JSONObject();
 
-		Object object = objectDao.getObjectById(Task.class, tasId);
+		Object object = giveDao().getObjectById(Task.class, tasId);
 		Task task = object != null ? (Task) object : null;
 		if (task != null && task.getTasState() == 1) {// 任务为申请中
+
 			String cond = "where appTask=" + tasId + " and appState=0";
-			List<?> list = objectDao.getObjectListBycond("Apply", cond);
-			List<Apply> applyList = new ArrayList<Apply>();
-			for (Object object1 : list) {
-				applyList.add((Apply) object1);
-			}
-			json.put("ApplyList", applyList);
+			List<?> list = giveDao().getObjectListBycond("Apply", cond);
+
+			JSONArray jArray = new JSONArray();
+			// 去掉json多余参数
+			JsonConfig jsonConfig = new JsonConfig();
+			jsonConfig.setIgnoreDefaultExcludes(false);
+			jsonConfig.setExcludes(new String[] { "appTask" });
+			for (Object object1 : list)
+				jArray.add((Apply) object1, jsonConfig);
+			json.put("ApplyList", jArray);
+		} else {// 任务为其他状态
+
+			String cond = "where appTask=" + tasId + " and appState in(1,3,4)";
+			List<?> list = giveDao().getObjectListBycond("Apply", cond);
+
+			JSONArray jArray = new JSONArray();
+			for (Object object1 : list)
+				jArray.add(((Apply) object1).getAppBeUser());
+			json.put("UserList", jArray);
 		}
 
 		return "success";
@@ -914,7 +949,7 @@ public class TaskAction {
 
 		json = new JSONObject();
 
-		Object object = objectDao.getObjectById(Task.class, tasId);
+		Object object = giveDao().getObjectById(Task.class, tasId);
 		Task task = object != null ? (Task) object : null;
 		if (task != null)
 			json.put("Task", task);
@@ -926,7 +961,7 @@ public class TaskAction {
 
 	// 通过任务获取任务发布者
 	public String giveTasUserByTasId() {
-		Object object = objectDao.getObjectById(Task.class, tasId);
+		Object object = giveDao().getObjectById(Task.class, tasId);
 		Task task = object != null ? (Task) object : null;
 		json = new JSONObject();
 		json.put("User", task.getTasUser());
@@ -999,12 +1034,8 @@ public class TaskAction {
 		this.appId = appId;
 	}
 
-	public void setPowCredit(Integer powCredit) {
-		this.powCredit = powCredit;
-	}
-
-	public void setIsFast(Integer isFast) {
-		this.isFast = isFast;
+	public void setTasCredit(Integer tasCredit) {
+		this.tasCredit = tasCredit;
 	}
 
 }

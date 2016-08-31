@@ -19,7 +19,7 @@ public class PayAction {
 
 	private static ObjectDao objectDao = new ObjectDaoImpl();
 	private static PropertyUtil propertyUtil = new PropertyUtil(
-			"Cons.properties");// 初始化参数配置文件
+			"cons.properties");// 初始化参数配置文件
 	private static int PAY_PerPageRow;
 
 	static {
@@ -33,6 +33,13 @@ public class PayAction {
 	// 反馈到前台
 	public static JSONObject json = new JSONObject();
 
+	/** 获取Dao */
+	public ObjectDao giveDao() {
+		if (objectDao == null)
+			objectDao = new ObjectDaoImpl();
+		return objectDao;
+	}
+
 	// 获取支付日志
 	public String givePayList() {
 
@@ -43,9 +50,9 @@ public class PayAction {
 		int userId = user != null ? user.getUseId() : 0;// 如为0，则反馈到前台的json为空，即获取失败
 
 		json = new JSONObject();
-		List<?> list = objectDao.pageListWithCond("Pay", curPage,
-				PAY_PerPageRow, "where payUser=" + userId
-						+ " order by payTime desc");
+		List<?> list = giveDao().pageListWithCond("Pay", curPage,
+				PAY_PerPageRow,
+				"where payUser=" + userId + " order by payTime desc");
 		List<Pay> payList = new ArrayList<Pay>();
 		for (Object object : list) {
 			payList.add((Pay) object);
@@ -57,7 +64,7 @@ public class PayAction {
 					.remove("payUser");
 		}
 		if (curPage == 0) {
-			List<?> list1 = objectDao.getObjectListBycond("Pay",
+			List<?> list1 = giveDao().getObjectListBycond("Pay",
 					"where payUser=" + userId);
 			json.put("size", list1.size());
 		}

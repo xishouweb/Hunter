@@ -9,6 +9,7 @@ public class Advert implements java.io.Serializable {
 	private String advContent;
 	private String advUrl;
 	private Integer advHotlevel;
+	private String advTime;
 
 	// Property accessors
 
@@ -50,6 +51,14 @@ public class Advert implements java.io.Serializable {
 
 	public void setAdvHotlevel(Integer advHotlevel) {
 		this.advHotlevel = advHotlevel;
+	}
+
+	public void setAdvTime(String advTime) {
+		this.advTime = advTime;
+	}
+
+	public String getAdvTime() {
+		return advTime;
 	}
 
 }

@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE hibernate-mapping PUBLIC "-//Hibernate/Hibernate Mapping DTD 3.0//EN"
+"http://hibernate.sourceforge.net/hibernate-mapping-3.0.dtd">
+
+<hibernate-mapping>
+    <class name="net.navagraha.hunter.pojo.Census" table="census" catalog="hunter">
+        <id name="cenId" type="java.lang.Integer">
+            <column name="cen_id" />
+            <generator class="identity" />
+        </id>
+        <property name="cenMonth" type="java.lang.String">
+            <column name="cen_month" length="20" not-null="true" />
+        </property>
+        <property name="cenDay" type="java.lang.Integer">
+            <column name="cen_day" not-null="true" />
+        </property>
+        <property name="cenActivenum" type="java.lang.Integer">
+            <column name="cen_activenum" />
+        </property>
+        <property name="cenActivetotal" type="java.lang.Integer">
+            <column name="cen_activetotal" />
+        </property>
+        <property name="cenLoginnum" type="java.lang.Integer">
+            <column name="cen_loginnum" />
+        </property>
+        <property name="cenOnlinenum" type="java.lang.Integer">
+            <column name="cen_onlinenum" />
+        </property>
+    </class>
+</hibernate-mapping>

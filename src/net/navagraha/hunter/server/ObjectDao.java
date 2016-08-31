@@ -31,6 +31,14 @@ public interface ObjectDao {
 	public void update(Object obj);
 
 	/**
+	 * 功能：根据HQL执行增删改语句
+	 * 
+	 * @param obj
+	 * @return
+	 */
+	public void executeUpdate(String hql);
+
+	/**
 	 * 功能：添加对象
 	 * 
 	 * @param obj
@@ -119,6 +127,15 @@ public interface ObjectDao {
 	 * @return
 	 */
 	public int getObjectSizeBycond(String hql);
+
+	/**
+	 * 功能：根据搜索条件获得对象数量(给定返回个数)
+	 * 
+	 * @param cond
+	 *            条件(需含where关键字)
+	 * @return
+	 */
+	public List<?> getSomeObjectListBycond(String hql, int limit);
 
 	/**
 	 * 功能：根据搜索条件获得对象数量,含in

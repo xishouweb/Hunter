@@ -84,6 +84,12 @@
         <property name="useIscompany" type="java.lang.Integer">
             <column name="use_iscompany" not-null="true" />
         </property>
+        <property name="useIsonline" type="java.lang.Integer">
+            <column name="use_isonline" not-null="true" />
+        </property>
+        <property name="useIslogin" type="java.lang.Integer">
+            <column name="use_islogin" not-null="true" />
+        </property>
         
     </class>
 </hibernate-mapping>

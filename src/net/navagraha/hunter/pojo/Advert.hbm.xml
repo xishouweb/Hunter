@@ -20,5 +20,8 @@
         <property name="advHotlevel" type="java.lang.Integer">
             <column name="adv_hotlevel" not-null="true" />
         </property>
+        <property name="advTime" type="java.lang.String">
+            <column name="adv_time" length="50" not-null="true" />
+        </property>
     </class>
 </hibernate-mapping>

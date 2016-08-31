@@ -13,6 +13,7 @@ import javax.servlet.ServletContextListener;
 
 import net.navagraha.hunter.lib.PropertyUtil;
 import net.navagraha.hunter.pojo.Apply;
+import net.navagraha.hunter.pojo.Census;
 import net.navagraha.hunter.pojo.Money;
 import net.navagraha.hunter.pojo.Pay;
 import net.navagraha.hunter.pojo.Power;
@@ -31,7 +32,6 @@ public class InitServerTool implements ServletContextListener {
 	}
 
 	public void contextInitialized(ServletContextEvent sce) {
-		// TODO 投入使用时取消注释
 		runable = new MyRunable();
 		Thread thread = new Thread(runable);
 		thread.start();
@@ -43,7 +43,7 @@ class MyRunable implements Runnable {
 
 	private static ObjectDao objectDao = new ObjectDaoImpl();
 	private static PropertyUtil propertyUtil = new PropertyUtil(
-			"Cons.properties");
+			"cons.properties");
 	private static int EXPIRE_DAY;// 过期时间
 	private static int CHECK_SECOND;// 每隔多少秒检查一次
 	private static double SUCCESS_TAX;// 成功服务费
@@ -63,8 +63,9 @@ class MyRunable implements Runnable {
 
 	public void run() {
 		while (run) {
-			doDB4Set();
-			doDB4Money();
+			// TODO 投入使用时取消注释
+			// doDB4Set();
+			// doDB4Money();
 			do4User();
 			try {
 				Thread.sleep(CHECK_SECOND);// 默认60秒检查一次
@@ -74,17 +75,18 @@ class MyRunable implements Runnable {
 		}
 	}
 
-	// 每天获取活跃用户前三名进行奖励
+	// 每天获取活跃用户前三名进行奖励，并且统计当天激活总人数和登录总人数
 	private void do4User() {
 		String ruleTime = "23:59";// 在凌晨进行统计，活跃前三进行奖励发送
-		String sysTime = new SimpleDateFormat("HH:MM").format(new Date());
+		String sysTime = new SimpleDateFormat("HH:mm").format(new Date());
 		if (ruleTime.equals(sysTime)) {
-			List<?> list = objectDao.getObjectListBycond("Tag",
-					"order by tagTimeout desc limit 3");
+			/** 获取前三进行处理 */
+			List<?> list = objectDao.getSomeObjectListBycond(
+					"from Tag order by tagTimeout desc", 3);
 			for (Object object : list) {
 				Tag tag = (Tag) object;
 				Users user = tag.getTagUser();
-				// 奖励
+				// 发放奖励
 				Money money = new Money();
 				money.setMonAlipay(user.getUseAlipay());
 				money.setMonComment("");
@@ -96,14 +98,59 @@ class MyRunable implements Runnable {
 				money.setMonPay(50.0);
 				money.setMonState(0);// 未打钱
 				money.setMonType("特殊");
-				money.setMonTime(new SimpleDateFormat("yyyyMMdd")
+				money.setMonTime(new SimpleDateFormat("yyyy-MM-dd")
 						.format(new Date()));
 				objectDao.save(money);
 			}
+			/** 处理结束 */
+
+			/** 设置当天统计 */
+			// 统计当天激活人数
+			String time[] = getDateBeforeNow(0, "yyyy-MM,dd").split(",");
+			String month = time[0];
+			int day = Integer.parseInt(time[1]);
+
+			// 获取激活总人数
+			Object obj1 = objectDao
+					.getObjectSizeBycond("select count(*) from Users where useIscompany in(0,1)");
+			int activeTotal = obj1 != null ? (Integer) obj1 : 0;
+
+			// 获取当天登录总人数
+			Object obj2 = objectDao
+					.getObjectSizeBycond("select count(*) from Users where useIslogin=1");
+			int loginNum = obj2 != null ? (Integer) obj2 : 0;
+			objectDao
+					.executeUpdate("update Users set useIslogin=0 where useIslogin=1");// 初始化当天登录状态
+
+			// 获取昨天激活总人数
+			String oldTime[] = getDateBeforeNow(1, "yyyy-MM,dd").split(",");
+			int oldactiveTotal = objectDao
+					.getObjectSizeBycond("select cenActivetotal from Census where cenMonth='"
+							+ oldTime[0] + "' and cenDay=" + oldTime[1]);
+
+			List<?> li = objectDao
+					.getObjectListBycond("from Census where cenMonth='" + month
+							+ "' and cenDay=" + day);
+			Census census;
+			if (li.size() < 1) {
+				census = new Census();
+				census.setCenMonth(month);
+				census.setCenDay(day);
+				census.setCenOnlinenum(0);
+				census.setCenLoginnum(0);
+			} else
+				census = (Census) li.get(0);
+			census.setCenLoginnum(loginNum);
+			census.setCenActivetotal(activeTotal);
+			census.setCenActivenum(activeTotal - oldactiveTotal);
+			objectDao.saveOrUpdate(census);
+			/** 设置当天统计结束 */
+
 		}
 	}
 
 	// 超过时间失效
+	@SuppressWarnings("unused")
 	private void doDB4Set() {
 		String sysTime = new Date().toLocaleString();
 		String hql = "where tasTimeout<='" + sysTime
@@ -201,9 +248,10 @@ class MyRunable implements Runnable {
 	}
 
 	// 超过时间未通过任务自动打钱
+	@SuppressWarnings("unused")
 	private void doDB4Money() {
 
-		String oldTime = getDateFromNow(EXPIRE_DAY);
+		String oldTime = getDateBeforeNow(EXPIRE_DAY, "yyyy-MM-dd HH:mm:ss");
 		String hql = "where tasState=3 and tasFinishtime<='" + oldTime + "'";
 		List<?> list = objectDao.getObjectListBycond("Task", hql);
 		if (list.size() > 0) {
@@ -310,13 +358,13 @@ class MyRunable implements Runnable {
 	}
 
 	/** 获取当前时间的N天前 */
-	private static String getDateFromNow(int afterDay) {
+	private static String getDateBeforeNow(int beforeDay, String sfd) {
 		GregorianCalendar calendar = new GregorianCalendar();
 		Date date = calendar.getTime();
 
-		SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+		SimpleDateFormat df = new SimpleDateFormat(sfd);
 
-		calendar.set(Calendar.DATE, calendar.get(Calendar.DATE) - afterDay);
+		calendar.set(Calendar.DATE, calendar.get(Calendar.DATE) - beforeDay);
 		date = calendar.getTime();
 
 		return df.format(date);

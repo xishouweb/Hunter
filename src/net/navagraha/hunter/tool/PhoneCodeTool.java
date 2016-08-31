@@ -15,7 +15,7 @@ import org.apache.commons.httpclient.methods.PostMethod;
 public class PhoneCodeTool {
 
 	private static PropertyUtil propertyUtil = new PropertyUtil(
-			"Cons.properties");// 加载参数配置文件
+			"cons.properties");// 加载参数配置文件
 
 	private PhoneCodeTool() {
 	}

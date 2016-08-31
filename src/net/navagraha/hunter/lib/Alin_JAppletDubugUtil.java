@@ -86,7 +86,7 @@ public class Alin_JAppletDubugUtil extends JApplet {
 
 	}
 
-	// 调用main方法,一般可用在过滤器里面
+	// 【说明】调用main方法,一般可用在过滤器里面
 	/*
 	 * if (request.getParameterNames().hasMoreElements()) { final MyJApplet
 	 * myJApplet = new MyJApplet(); Thread thread = new Thread() {

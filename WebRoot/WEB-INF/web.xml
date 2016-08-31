@@ -8,7 +8,7 @@
     <welcome-file>index.jsp</welcome-file>
   </welcome-file-list>
   
-    <!-- 该监听器用于服务器启动时开启socket监听 -->
+    <!-- 该监听器用于服务器启动 -->
 	<listener> 
         <listener-class>net.navagraha.hunter.tool.InitServerTool</listener-class> 
     </listener>

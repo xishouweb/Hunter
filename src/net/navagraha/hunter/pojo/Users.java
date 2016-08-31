@@ -30,6 +30,8 @@ public class Users implements java.io.Serializable {
 	private String useEmei;
 	private Integer useIsprotect;
 	private Integer useIscompany;
+	private Integer useIsonline;
+	private Integer useIslogin;
 
 	// Property accessors
 
@@ -239,6 +241,22 @@ public class Users implements java.io.Serializable {
 
 	public String getUseAlipay() {
 		return useAlipay;
+	}
+
+	public void setUseIsonline(Integer useIsonline) {
+		this.useIsonline = useIsonline;
+	}
+
+	public Integer getUseIsonline() {
+		return useIsonline;
+	}
+
+	public void setUseIslogin(Integer useIslogin) {
+		this.useIslogin = useIslogin;
+	}
+
+	public Integer getUseIslogin() {
+		return useIslogin;
 	}
 
 }

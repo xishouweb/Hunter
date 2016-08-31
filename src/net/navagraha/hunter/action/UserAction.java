@@ -144,6 +144,9 @@ public class UserAction {
 			census.setCenMonth(month);
 			census.setCenDay(day);
 			census.setCenOnlinenum(0);
+			census.setCenLoginnum(0);
+			census.setCenActivetotal(0);
+			census.setCenActivenum(0);
 		} else
 			census = (Census) li.get(0);
 		if (onlineNum > census.getCenOnlinenum())

@@ -4,7 +4,6 @@ import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
@@ -63,9 +62,8 @@ class MyRunable implements Runnable {
 
 	public void run() {
 		while (run) {
-			// TODO 投入使用时取消注释
-			// doDB4Set();
-			// doDB4Money();
+			doDB4Set();
+			doDB4Money();
 			do4User();
 			try {
 				Thread.sleep(CHECK_SECOND);// 默认60秒检查一次
@@ -150,9 +148,9 @@ class MyRunable implements Runnable {
 	}
 
 	// 超过时间失效
-	@SuppressWarnings("unused")
 	private void doDB4Set() {
-		String sysTime = new Date().toLocaleString();
+		String sysTime = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
+				.format(new Date());
 		String hql = "where tasTimeout<='" + sysTime
 				+ "' and tasState in (0,1,2)";
 		List<?> list = objectDao.getObjectListBycond("Task", hql);
@@ -180,16 +178,14 @@ class MyRunable implements Runnable {
 						money.setMonType("特殊");
 					} else
 						money.setMonType(task.getTasType());
-					money.setMonTime(new SimpleDateFormat("yyyyMMdd")
+					money.setMonTime(new SimpleDateFormat("yyyy-MM-dd")
 							.format(new Date()));
 					objectDao.save(money);
 					/** 返钱结束 */
 
 					/** 能力 **/
 					Set<Apply> set = task.getTasApplies();
-					for (Iterator<Apply> iterator = set.iterator(); iterator
-							.hasNext();) {
-						Apply apply = (Apply) iterator.next();
+					for (Apply apply : set) {
 
 						if (apply.getAppState() == 1) {// 任务的真实接受者才进行扣信誉
 							apply.setAppState(4);// 任务失败
@@ -208,6 +204,7 @@ class MyRunable implements Runnable {
 								power = new Power();
 								power.setPowCredit(50 - 4);
 								power.setPowUser(beUser);
+								power.setPowFast(0);
 							}
 							objectDao.saveOrUpdate(power);
 						}
@@ -224,12 +221,12 @@ class MyRunable implements Runnable {
 							new Object[] { sdf.format(new Date()), user });
 
 					if (list1.size() > 0) {
-						// 支出者
+						// 支出
 						payOut = (Pay) list1.get(0);
 						payOut.setPayOut(payOut.getPayOut()
 								+ task.getTasPrice() * FALSE_TAX);
 					} else {
-						// 支出者
+						// 支出
 						payOut = new Pay();
 						payOut.setPayTime(sdf.format(new Date()));
 						payOut.setPayIn(0.0);
@@ -248,7 +245,6 @@ class MyRunable implements Runnable {
 	}
 
 	// 超过时间未通过任务自动打钱
-	@SuppressWarnings("unused")
 	private void doDB4Money() {
 
 		String oldTime = getDateBeforeNow(EXPIRE_DAY, "yyyy-MM-dd HH:mm:ss");
@@ -259,9 +255,33 @@ class MyRunable implements Runnable {
 			for (Object object : list) {
 				Task task = (Task) object;
 				Set<Apply> set = task.getTasApplies();
-				for (Iterator<Apply> iterator = set.iterator(); iterator
-						.hasNext();) {
-					Apply apply = (Apply) iterator.next();
+
+				/** 支付日志 **/
+				SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM");
+				Pay payOut;
+
+				// 获取任务发布者的pay
+				List<?> list1 = objectDao.getObjectListByfield("Pay",
+						new String[] { "payTime", "payUser" }, new Object[] {
+								sdf.format(new Date()), task.getTasUser() });
+
+				if (list1.size() > 0) {
+					// 支出
+					payOut = (Pay) list1.get(0);
+					payOut.setPayOut(payOut.getPayOut() + task.getTasPrice()
+							* 1.0);
+				} else {
+					// 支出
+					payOut = new Pay();
+					payOut.setPayTime(sdf.format(new Date()));
+					payOut.setPayIn(0.0);
+					payOut.setPayOut(task.getTasPrice() * 1.0);
+					payOut.setPayUser(task.getTasUser());
+				}
+				objectDao.saveOrUpdate(payOut);
+				/** 支付日志结束 **/
+
+				for (Apply apply : set) {
 
 					if (apply.getAppState() == 1) {// 为该任务的实际接受者
 						apply.setAppState(3);// 任务成功
@@ -279,49 +299,27 @@ class MyRunable implements Runnable {
 										"yyyyMMddHHmmssSSS").format(new Date())
 										+ user.getUseSno().substring(
 												user.getUseSno().length() - 4));
-						money.setMonPay(task.getTasPrice() * (1 - SUCCESS_TAX));
+						money.setMonPay(task.getTasPrice() * (1 - SUCCESS_TAX)
+								/ set.size());
 						money.setMonState(0);// 未打钱
 						if (task.getTasUser().getUseIscompany() == 1) {
 							money.setMonType("特殊");
 						} else
 							money.setMonType(task.getTasType());
-						money.setMonTime(new SimpleDateFormat("yyyyMMdd")
+						money.setMonTime(new SimpleDateFormat("yyyy-MM-dd")
 								.format(new Date()));
 						objectDao.save(money);
 						/** 打钱结束 */
 
 						/** 支付日志 **/
-						SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM");
-						Pay payOut, payIn;
-
-						// 获取任务发布者的pay
-						List<?> list1 = objectDao.getObjectListByfield("Pay",
-								new String[] { "payTime", "payUser" },
-								new Object[] { sdf.format(new Date()),
-										task.getTasUser() });
-
-						if (list1.size() > 0) {
-							// 支出者
-							payOut = (Pay) list1.get(0);
-							payOut.setPayOut(payOut.getPayOut()
-									+ task.getTasPrice() * 1.0);
-						} else {
-							// 支出者
-							payOut = new Pay();
-							payOut.setPayTime(sdf.format(new Date()));
-							payOut.setPayIn(0.0);
-							payOut.setPayOut(task.getTasPrice() * 1.0);
-							payOut.setPayUser(task.getTasUser());
-						}
-						objectDao.saveOrUpdate(payOut);
-
 						// 获取任务收人者的pay
+						Pay payIn;
 						List<?> list2 = objectDao.getObjectListByfield("Pay",
 								new String[] { "payTime", "payUser" },
 								new Object[] { sdf.format(new Date()), user });
 
 						if (list2.size() > 0) {
-							// 收入者
+							// 收入
 							payIn = (Pay) list2.get(0);
 							if (task.getTasType().equals("团队"))
 								payIn.setPayIn(payIn.getPayIn()
@@ -333,7 +331,7 @@ class MyRunable implements Runnable {
 										+ task.getTasPrice()
 										* (1 - SUCCESS_TAX));
 						} else {
-							// 收入者
+							// 收入
 							payIn = new Pay();
 							payIn.setPayTime(sdf.format(new Date()));
 							payIn.setPayOut(0.0);

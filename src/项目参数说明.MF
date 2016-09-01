@@ -43,7 +43,7 @@ task表：
    tas_finishnum：申请任务完成的人数
    
 apply表：
-   app_state：该接受者是否通过  0/1/2/3/4 申请中/通过/不通过/成功/失败
+   app_state：该接受者是否通过  0/1/2/3/4/5 申请中/通过/不通过/成功/失败/审核中
    
 pay表：
    pay_time：显示yyyy-MM

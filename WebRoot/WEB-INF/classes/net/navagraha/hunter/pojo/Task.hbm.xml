@@ -26,7 +26,7 @@
         <property name="tasTime" type="java.lang.String">
             <column name="tas_time" length="40" not-null="true" />
         </property>
-        <property name="tasPrice" type="java.lang.Integer">
+        <property name="tasPrice" type="java.lang.Double">
             <column name="tas_price" not-null="true" />
         </property>
         <property name="tasType" type="java.lang.String">

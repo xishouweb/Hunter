@@ -325,11 +325,10 @@ public class UserAction {
 					}
 					ServletActionContext.getRequest().getSession()
 							.setAttribute("phone_yzm", code);
-					// if (PhoneCodeTool.send(usePhone, code, "yzm")) {
-					setCode("5");// 发送成功
-					System.out.println(code);
-					// } else
-					// setCode("6");// 发送失败
+					if (PhoneCodeTool.send(usePhone, code, "yzm")) {
+						setCode("5");// 发送成功
+					} else
+						setCode("6");// 发送失败
 				} else
 					setCode("3");// 原密码不正确
 			} else {

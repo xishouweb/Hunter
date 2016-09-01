@@ -5,7 +5,6 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -34,7 +33,7 @@ public class TaskAction {
 	private String tasTitle;
 	private String tasContact;
 	private String tasContent;
-	private Integer tasPrice;
+	private Double tasPrice;
 	private String tasType;
 	private String tasState;
 	private String tasTimeout;
@@ -92,6 +91,12 @@ public class TaskAction {
 		Object object = ServletActionContext.getRequest().getSession()
 				.getAttribute("Users");// 将登陆用户取出
 		Users user = object != null ? (Users) object : null;
+
+		if (user.getUseAlipay().equals("") || user.getUseAlipay() == null) {
+			setCode("21");
+			return "success";
+		}
+
 		Task task = null;
 
 		if (user != null) {
@@ -132,6 +137,7 @@ public class TaskAction {
 						.format(date));
 				task.setTasRulenum(tasRulenum);// 限定人数
 				task.setTasReceivenum(0);
+				task.setTasFinishnum(0);
 			}
 
 		}
@@ -174,7 +180,7 @@ public class TaskAction {
 
 					money.setMonState(0);// 未打钱
 					money.setMonType("特殊");// 平台奖励属于特殊
-					money.setMonTime(new SimpleDateFormat("yyyyMMdd")
+					money.setMonTime(new SimpleDateFormat("yyyy-MM-dd")
 							.format(new Date()));
 					giveDao().save(money);
 				}
@@ -203,6 +209,10 @@ public class TaskAction {
 		Users user = object1 != null ? (Users) object1 : null;
 
 		if (task != null && user != null) {
+			if (user.getUseAlipay().equals("") || user.getUseAlipay() == null) {
+				setCode("21");
+				return "success";
+			}
 			for (Apply apply : task.getTasApplies()) {
 				if (apply.getAppBeUser().getUseId().intValue() == user
 						.getUseId().intValue()) {// 已申请,不必重复申请
@@ -308,14 +318,17 @@ public class TaskAction {
 		if (apply != null) {
 			Task task = apply.getAppTask();
 			if (task != null && task.getTasState() == 1) {
-				// 其他申请自动设置为不通过
-				List<?> tasList = giveDao().getObjectListByfield("Apply",
-						"appTask", task);
-				for (Object object2 : tasList) {
-					Apply apply2 = (Apply) object2;
-					if (apply2.getAppId() != appId) {
-						apply2.setAppState(2);// 不通过
-						giveDao().update(apply2);
+
+				if (!task.getTasType().equals("团队")) {
+					// 其他申请自动设置为不通过
+					List<?> tasList = giveDao().getObjectListByfield("Apply",
+							"appTask", task);
+					for (Object object2 : tasList) {
+						Apply apply2 = (Apply) object2;
+						if (apply2.getAppId() != appId) {
+							apply2.setAppState(2);// 不通过
+							giveDao().update(apply2);
+						}
 					}
 				}
 
@@ -357,7 +370,7 @@ public class TaskAction {
 
 					money.setMonState(0);// 未打钱
 					money.setMonType("特殊");// 平台奖励属于特殊
-					money.setMonTime(new SimpleDateFormat("yyyyMMdd")
+					money.setMonTime(new SimpleDateFormat("yyyy-MM-dd")
 							.format(new Date()));
 					giveDao().save(money);
 				}
@@ -365,7 +378,7 @@ public class TaskAction {
 
 				giveDao().update(user);
 
-				if (task.getTasType().equals("个人")) {
+				if (task.getTasType().equals("个人")) {// 个人任务
 
 					apply.setAppState(1);// 通过
 					giveDao().update(apply);
@@ -378,8 +391,9 @@ public class TaskAction {
 
 					setCode("1");// 操作成功
 					return "success";
-				} else {
-					if (task.getTasReceivenum() == task.getTasRulenum() - 1) {// 任务人数已达齐，开始进行
+				} else {// 团队任务
+					if (task.getTasReceivenum().intValue() == task
+							.getTasRulenum().intValue() - 1) {// 任务人数已达齐，开始进行
 						apply.setAppState(1);// 通过
 						giveDao().update(apply);
 
@@ -387,11 +401,13 @@ public class TaskAction {
 						Set<Apply> set = task.getTasApplies();
 						set.add(apply);
 						task.setTasApplies(set);
+						task.setTasReceivenum(task.getTasReceivenum() + 1);
 						giveDao().update(task);
 
 						setCode("1");// 操作成功
 						return "success";
-					} else if (task.getTasReceivenum() < task.getTasRulenum() - 1) {// 任务人数未达齐
+					} else if (task.getTasReceivenum().intValue() < task
+							.getTasRulenum().intValue() - 1) {// 任务人数未达齐
 						apply.setAppState(1);// 通过
 						giveDao().update(apply);
 
@@ -399,6 +415,7 @@ public class TaskAction {
 						Set<Apply> set = task.getTasApplies();
 						set = set.size() < 1 ? new HashSet<Apply>(0) : set;
 						set.add(apply);
+						task.setTasReceivenum(task.getTasReceivenum() + 1);
 						task.setTasApplies(set);
 						giveDao().update(task);
 
@@ -445,6 +462,10 @@ public class TaskAction {
 	// 用户要完成任务
 	public String finishTask() {
 
+		Object object1 = ServletActionContext.getRequest().getSession()
+				.getAttribute("Users");// 将登陆用户取出
+		Users user = object1 != null ? (Users) object1 : null;
+
 		Object object = giveDao().getObjectById(Task.class, tasId);
 		Task task = object != null ? (Task) object : null;
 
@@ -469,7 +490,24 @@ public class TaskAction {
 					return "success";
 				}
 			} else {// 团队任务
-				if (task.getTasFinishnum() == task.getTasRulenum() - 1) {// 任务人数已达齐，开始申请审核
+
+				for (Apply apply : task.getTasApplies()) {
+					if (apply.getAppBeUser().getUseId().intValue() == user
+							.getUseId().intValue()) {
+						if (apply.getAppState().intValue() == 5) {
+							setCode("14");// 已点击了申请完成，不必重新点击申请完成
+							return "success";
+						} else {
+							apply.setAppState(5);
+							objectDao.update(apply);// 设置该用户申请已提交（避免重复提交）
+							break;
+						}
+
+					}
+				}
+
+				if (task.getTasFinishnum().intValue() == task.getTasRulenum()
+						.intValue() - 1) {// 任务人数已达齐，开始申请审核
 
 					task.setTasFinishtime(new SimpleDateFormat(
 							"yyyy-MM-dd HH:mm:ss").format(new Date()));
@@ -480,16 +518,12 @@ public class TaskAction {
 							.getTasTitle(), "task");// 短信提示发布者任务已完成
 					setCode("1");// 操作成功
 					return "success";
-				}
-				if (task.getTasReceivenum() < task.getTasRulenum() - 1) {// 任务人数未达齐
+				} else {// 任务人数未达齐
 
 					task.setTasFinishnum(task.getTasFinishnum() + 1);
 					task.setTasState(2);// 任务仍是进行中
 					giveDao().update(task);
 					setCode("1");// 操作成功
-					return "success";
-				} else {
-					setCode("14");// 规定人数都点击了申请完成，不必重新点击申请完成
 					return "success";
 				}
 			}
@@ -511,11 +545,35 @@ public class TaskAction {
 
 			if (set.size() > 0) {
 
-				for (Iterator<Apply> iterator = set.iterator(); iterator
-						.hasNext();) {
-					Apply apply = (Apply) iterator.next();
+				/** 支付日志 **/
+				SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM");
+				// 获取任务发布者的pay
+				Pay payOut;
+				List<?> list1 = giveDao().getObjectListByfield(
+						"Pay",
+						new String[] { "payTime", "payUser" },
+						new Object[] { sdf.format(new Date()),
+								task.getTasUser() });
 
-					if (apply.getAppState() == 1) {// 任务的真实接受者
+				if (list1.size() > 0) {
+					// 支出
+					payOut = (Pay) list1.get(0);
+					payOut.setPayOut(payOut.getPayOut() + task.getTasPrice()
+							+ 0.0);
+				} else {
+					// 支出
+					payOut = new Pay();
+					payOut.setPayTime(sdf.format(new Date()));
+					payOut.setPayIn(0.0);
+					payOut.setPayOut(task.getTasPrice() + 0.0);
+					payOut.setPayUser(task.getTasUser());
+				}
+				giveDao().saveOrUpdate(payOut);
+				/** 支付日志结束 **/
+
+				for (Apply apply : set) {
+
+					if (apply.getAppState() == 1 || apply.getAppState() == 5) {// 任务的真实接受者
 						apply.setAppState(3);// 任务成功
 						giveDao().update(apply);
 
@@ -531,59 +589,43 @@ public class TaskAction {
 										"yyyyMMddHHmmssSSS").format(new Date())
 										+ user.getUseSno().substring(
 												user.getUseSno().length() - 4));
-						money.setMonPay(task.getTasPrice() * (1 - SUCCESS_TAX));
+						money.setMonPay(task.getTasPrice() * (1 - SUCCESS_TAX)
+								/ set.size());
 						money.setMonState(0);// 未打钱
 						if (task.getTasUser().getUseIscompany() == 1) {
 							money.setMonType("特殊");
 						} else
 							money.setMonType(task.getTasType());
-						money.setMonTime(new SimpleDateFormat("yyyyMMdd")
+						money.setMonTime(new SimpleDateFormat("yyyy-MM-dd")
 								.format(new Date()));
 						giveDao().save(money);
 						/** 打钱结束 */
 
 						/** 能力 **/
 						// 获取任务接收者的power
+
 						List<?> list3 = giveDao().getObjectListByfield("Power",
 								"powUser", user);
 						Power power;
 						if (tasCredit != null && list3.size() > 0) {
-
 							power = (Power) list3.get(0);
 							power
 									.setPowCredit(power.getPowCredit()
 											+ tasCredit);
-							if (tasCredit > 3)
-								power.setPowFast(power.getPowFast() + 1);
-							giveDao().update(power);
+						} else {
+							power = new Power();
+							power.setPowCredit(50 + tasCredit);
+							power.setPowUser(user);
+							power.setPowFast(0);
 						}
+
+						if (tasCredit > 3)
+							power.setPowFast(power.getPowFast() + 1);
+						objectDao.saveOrUpdate(power);
 						/** 能力结束 **/
 
 						/** 支付日志 **/
-						SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM");
-						Pay payOut, payIn;
-
-						// 获取任务发布者的pay
-						List<?> list1 = giveDao().getObjectListByfield(
-								"Pay",
-								new String[] { "payTime", "payUser" },
-								new Object[] { sdf.format(new Date()),
-										task.getTasUser() });
-
-						if (list1.size() > 0) {
-							// 支出者
-							payOut = (Pay) list1.get(0);
-							payOut.setPayOut(payOut.getPayOut()
-									+ task.getTasPrice() + 0.0);
-						} else {
-							// 支出者
-							payOut = new Pay();
-							payOut.setPayTime(sdf.format(new Date()));
-							payOut.setPayIn(0.0);
-							payOut.setPayOut(task.getTasPrice() + 0.0);
-							payOut.setPayUser(task.getTasUser());
-						}
-						giveDao().saveOrUpdate(payOut);
+						Pay payIn;
 
 						// 获取任务收入者的pay
 						List<?> list2 = giveDao().getObjectListByfield("Pay",
@@ -591,7 +633,7 @@ public class TaskAction {
 								new Object[] { sdf.format(new Date()), user });
 
 						if (list2.size() > 0) {
-							// 收入者
+							// 收入
 							payIn = (Pay) list2.get(0);
 							if (task.getTasType().equals("团队"))
 								payIn.setPayIn(payIn.getPayIn()
@@ -603,7 +645,7 @@ public class TaskAction {
 										+ task.getTasPrice()
 										* (1 - SUCCESS_TAX));
 						} else {
-							// 收入者
+							// 收入
 							payIn = new Pay();
 							payIn.setPayTime(sdf.format(new Date()));
 							payIn.setPayOut(0.0);
@@ -650,11 +692,9 @@ public class TaskAction {
 			if (set.size() > 0) {
 
 				/** 能力 **/
-				for (Iterator<Apply> iterator = set.iterator(); iterator
-						.hasNext();) {
-					Apply apply = (Apply) iterator.next();
+				for (Apply apply : set) {
 
-					if (apply.getAppState() == 1) {// 任务的真实接受者
+					if (apply.getAppState() == 1 || apply.getAppState() == 5) {// 任务的真实接受者
 						apply.setAppState(4);// 任务失败
 						giveDao().update(apply);
 
@@ -666,8 +706,14 @@ public class TaskAction {
 						if (list3.size() > 0) {
 							power = (Power) list3.get(0);
 							power.setPowCredit(power.getPowCredit() - 4);// 失败任务减4分
-							giveDao().update(power);
+						} else {
+							power = new Power();
+							power.setPowUser(beUser);
+							power.setPowCredit(50 - 4);// 失败任务减4分
+							power.setPowFast(0);
 						}
+						objectDao.saveOrUpdate(power);
+
 					}
 				}
 				/** 能力结束 **/
@@ -692,7 +738,7 @@ public class TaskAction {
 						money.setMonType("特殊");
 					} else
 						money.setMonType(task.getTasType());
-					money.setMonTime(new SimpleDateFormat("yyyyMMdd")
+					money.setMonTime(new SimpleDateFormat("yyyy-MM-dd")
 							.format(new Date()));
 					giveDao().save(money);
 					/** 返钱结束 */
@@ -835,8 +881,8 @@ public class TaskAction {
 			cond += " and appState in (2,4)" + " order by appId desc";
 		if (tasState.equals("1"))// 显示成功任务
 			cond += " and appState=3" + " order by appId desc";
-		if (tasState.equals("2"))// 显示进行中任务
-			cond += " and appState=1" + " order by appId desc";
+		if (tasState.equals("2"))// 显示申请通过和审核中的任务
+			cond += " and appState in (1,5)" + " order by appId desc";
 		if (tasState.equals("3"))// 显示申请中任务
 			cond += " and appState=0" + " order by appId desc";
 
@@ -978,7 +1024,7 @@ public class TaskAction {
 		this.tasContent = tasContent;
 	}
 
-	public void setTasPrice(Integer tasPrice) {
+	public void setTasPrice(Double tasPrice) {
 		this.tasPrice = tasPrice;
 	}
 

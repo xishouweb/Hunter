@@ -14,7 +14,7 @@ public class Task implements java.io.Serializable {
 	private String tasContact;
 	private String tasContent;
 	private String tasTime;
-	private Integer tasPrice;
+	private Double tasPrice;
 	private String tasType;
 	private Integer tasState;
 	private String tasTimeout;
@@ -76,11 +76,11 @@ public class Task implements java.io.Serializable {
 		this.tasTime = tasTime;
 	}
 
-	public Integer getTasPrice() {
+	public Double getTasPrice() {
 		return this.tasPrice;
 	}
 
-	public void setTasPrice(Integer tasPrice) {
+	public void setTasPrice(Double tasPrice) {
 		this.tasPrice = tasPrice;
 	}
 

@@ -25,13 +25,16 @@ public class PhoneCodeTool {
 		String text = "";
 		if (mode.equals("yzm"))
 			text = propertyUtil.getPropertyValue("Yzm") + code + "】，请勿泄露。";// 发送内容模板
-		if (mode.equals("pwd")) {
+		if (mode.equals("pwd"))
 			text = propertyUtil.getPropertyValue("Pwd") + code + "】，请勿泄露。";// 发送内容模板
-		}
-		if (mode.equals("task")) {
+		if (mode.equals("task"))
 			text = propertyUtil.getPropertyValue("Task") + code
 					+ "】已被完成，请前往审核。";// 发送内容模板
+		if (mode.equals("apply")) {
+			text = propertyUtil.getPropertyValue("Apply") + code
+					+ "】已被通过，请尽快完成。";// 发送内容模板
 		}
+
 		String userName = propertyUtil.getPropertyValue("UserName");// 短信平台用户名
 		String passWord = propertyUtil.getPropertyValue("PassWord");// 短信平台密码
 

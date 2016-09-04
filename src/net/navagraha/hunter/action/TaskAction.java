@@ -85,6 +85,20 @@ public class TaskAction {
 		return objectDao;
 	}
 
+	public String hasAlipay() {
+		Object object = ServletActionContext.getRequest().getSession()
+				.getAttribute("Users");// 将登陆用户取出
+		Users user = object != null ? (Users) object : null;
+		if (user != null) {
+			if (user.getUseAlipay().equals("") || user.getUseAlipay() == null) {
+				setCode("21");
+				return "success";
+			}
+		}
+		setCode("1");
+		return "success";
+	}
+
 	// 发布任务
 	public String publishTask() {
 
@@ -92,14 +106,10 @@ public class TaskAction {
 				.getAttribute("Users");// 将登陆用户取出
 		Users user = object != null ? (Users) object : null;
 
-		if (user.getUseAlipay().equals("") || user.getUseAlipay() == null) {
-			setCode("21");
-			return "success";
-		}
-
 		Task task = null;
 
 		if (user != null) {
+
 			task = new Task();
 			task.setTasTitle(tasTitle);
 			task.setTasPrice(tasPrice);
@@ -156,6 +166,7 @@ public class TaskAction {
 							.format(new Date())
 							+ user.getUseSno().substring(
 									user.getUseSno().length() - 4));
+					money.setMonPhone(user.getUsePhone());
 					if (PowerAction.givePowerByUseId(user.getUseId())
 							.substring(0, 2).equals("青铜"))
 						money.setMonPay(8.0);
@@ -238,7 +249,7 @@ public class TaskAction {
 				strs = tag.getTagTasktype().split(",");
 				int c = Integer.parseInt(strs[0]), d = Integer
 						.parseInt(strs[1]), e = Integer.parseInt(strs[2]);
-				if (task.getTasType().equals("个人加急"))
+				if (task.getTasType().equals("加急个人"))
 					c++;
 				if (task.getTasType().equals("个人"))
 					d++;
@@ -302,12 +313,26 @@ public class TaskAction {
 		if (apply != null && apply.getAppState() == 0) {
 			giveDao().delete(apply);
 			setCode("1");// 操作成功
-			return "success";
-		} else {
-			setCode("13");// 申请记录不存在
-			return "success";
-		}
+		} else
+			setCode("23");// 任务已进入进行状态，不能取消
 
+		return "success";
+
+	}
+
+	// 取消发布任务（仅限发布和申请状态的任务，即tasState=0,1,注：传入的任务应该tasState=0,1,2）
+	public String backTask() {
+		Object object = giveDao().getObjectById(Apply.class, tasId);
+		Task task = object != null ? (Task) object : null;
+		if (task != null && task.getTasState() != 2) {
+			task.setTasTimeout(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
+					.format(new Date()));// 设置任务立即过期，使用initServerTool方法自动检测过期任务以返款，并将任务设为失败
+			giveDao().update(task);
+			setCode("1");// 操作成功
+		} else
+			setCode("22");// 任务已过发布和申请状态，不能撤销
+
+		return "success";
 	}
 
 	// 用户审核通过申请(非加急)
@@ -335,6 +360,8 @@ public class TaskAction {
 				// 本申请通过
 				Users user = apply.getAppBeUser();
 				user.setUseAcceptnum(user.getUseAcceptnum() + 1);
+				PhoneCodeTool.send(user.getUsePhone(), task.getTasTitle(),
+						"apply");
 
 				/** 打钱 */
 				if (user.getUseAcceptnum() % RecMoney == 0) {// 用户接受任务每达到规定数，进行奖励
@@ -346,6 +373,7 @@ public class TaskAction {
 							.format(new Date())
 							+ user.getUseSno().substring(
 									user.getUseSno().length() - 4));
+					money.setMonPhone(user.getUsePhone());
 					if (PowerAction.givePowerByUseId(user.getUseId())
 							.substring(0, 2).equals("青铜"))
 						money.setMonPay(8.0);
@@ -592,6 +620,7 @@ public class TaskAction {
 						money.setMonPay(task.getTasPrice() * (1 - SUCCESS_TAX)
 								/ set.size());
 						money.setMonState(0);// 未打钱
+						money.setMonPhone(user.getUsePhone());
 						if (task.getTasUser().getUseIscompany() == 1) {
 							money.setMonType("特殊");
 						} else
@@ -734,6 +763,7 @@ public class TaskAction {
 									user.getUseSno().length() - 4));
 					money.setMonPay(task.getTasPrice() * (1 - FALSE_TAX));
 					money.setMonState(0);// 未打钱
+					money.setMonPhone(user.getUsePhone());
 					if (task.getTasUser().getUseIscompany() == 1) {
 						money.setMonType("特殊");
 					} else
@@ -1009,8 +1039,10 @@ public class TaskAction {
 	public String giveTasUserByTasId() {
 		Object object = giveDao().getObjectById(Task.class, tasId);
 		Task task = object != null ? (Task) object : null;
-		json = new JSONObject();
-		json.put("User", task.getTasUser());
+		if (task != null) {
+			json = new JSONObject();
+			json.put("User", task.getTasUser());
+		}
 		return "success";
 	}
 

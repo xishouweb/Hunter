@@ -13,6 +13,7 @@ public class Money implements java.io.Serializable {
 	private Integer monState;
 	private String monType;
 	private String monTime;
+	private String monPhone;
 
 	// Property accessors
 
@@ -86,6 +87,14 @@ public class Money implements java.io.Serializable {
 
 	public String getMonType() {
 		return monType;
+	}
+
+	public void setMonPhone(String monPhone) {
+		this.monPhone = monPhone;
+	}
+
+	public String getMonPhone() {
+		return monPhone;
 	}
 
 }

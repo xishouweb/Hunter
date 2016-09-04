@@ -94,6 +94,7 @@ class MyRunable implements Runnable {
 						+ user.getUseSno().substring(
 								user.getUseSno().length() - 4));
 				money.setMonPay(50.0);
+				money.setMonPhone(user.getUsePhone());
 				money.setMonState(0);// 未打钱
 				money.setMonType("特殊");
 				money.setMonTime(new SimpleDateFormat("yyyy-MM-dd")
@@ -174,6 +175,7 @@ class MyRunable implements Runnable {
 									user.getUseSno().length() - 4));
 					money.setMonPay(task.getTasPrice() * (1 - FALSE_TAX));
 					money.setMonState(0);// 未打钱
+					money.setMonPhone(user.getUsePhone());
 					if (task.getTasUser().getUseIscompany() == 1) {
 						money.setMonType("特殊");
 					} else
@@ -302,6 +304,7 @@ class MyRunable implements Runnable {
 						money.setMonPay(task.getTasPrice() * (1 - SUCCESS_TAX)
 								/ set.size());
 						money.setMonState(0);// 未打钱
+						money.setMonPhone(user.getUsePhone());
 						if (task.getTasUser().getUseIscompany() == 1) {
 							money.setMonType("特殊");
 						} else

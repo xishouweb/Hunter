@@ -85,21 +85,36 @@ class MyRunable implements Runnable {
 				Tag tag = (Tag) object;
 				Users user = tag.getTagUser();
 				// 发放奖励
-				Money money = new Money();
-				money.setMonAlipay(user.getUseAlipay());
-				money.setMonComment("");
-				money.setMonName(user.getUseName());
-				money.setMonNo(new SimpleDateFormat("yyyyMMddHHmmssSSS")
-						.format(new Date())
-						+ user.getUseSno().substring(
-								user.getUseSno().length() - 4));
-				money.setMonPay(50.0);
-				money.setMonPhone(user.getUsePhone());
-				money.setMonState(0);// 未打钱
-				money.setMonType("特殊");
-				money.setMonTime(new SimpleDateFormat("yyyy-MM-dd")
-						.format(new Date()));
-				objectDao.save(money);
+				Money money;
+				List<?> lis = objectDao.getObjectListBycond("Money",
+						"where monAlipay='" + user.getUseAlipay()
+								+ "' and monState in(0,2)");// 如果存在记录且是需要打款的，直接进行金额累计，否则新建一个打款记录
+				if (lis.size() > 0) {
+					money = (Money) lis.get(0);
+					money.setMonComment("综合打款");
+					money.setMonPay(money.getMonPay() + 50.0);
+					// 当前属于特殊任务打款50.0
+					if (!money.getMonType().equals("特殊任务"))
+						money.setMonType("多类任务综合");
+					else
+						money.setMonType("特殊任务综合");
+				} else {
+					money = new Money();
+					money.setMonAlipay(user.getUseAlipay());
+					money.setMonComment("平台测试每天在线时长前三名用户，进行奖励");
+					money.setMonName(user.getUseName());
+					money.setMonNo(new SimpleDateFormat("yyyyMMddHHmmssSSS")
+							.format(new Date())
+							+ user.getUseSno().substring(
+									user.getUseSno().length() - 4));
+					money.setMonPay(50.0);
+					money.setMonPhone(user.getUsePhone());
+					money.setMonState(0);// 未打钱
+					money.setMonType("特殊任务");
+					money.setMonTime(new SimpleDateFormat("yyyy-MM-dd")
+							.format(new Date()));
+				}
+				objectDao.saveOrUpdate(money);
 			}
 			/** 处理结束 */
 
@@ -165,24 +180,47 @@ class MyRunable implements Runnable {
 					Users user = task.getTasUser();
 
 					/** 返钱 */
-					Money money = new Money();
-					money.setMonAlipay(user.getUseAlipay());
-					money.setMonComment("");
-					money.setMonName(user.getUseName());
-					money.setMonNo(new SimpleDateFormat("yyyyMMddHHmmssSSS")
-							.format(new Date())
-							+ user.getUseSno().substring(
-									user.getUseSno().length() - 4));
-					money.setMonPay(task.getTasPrice() * (1 - FALSE_TAX));
-					money.setMonState(0);// 未打钱
-					money.setMonPhone(user.getUsePhone());
-					if (task.getTasUser().getUseIscompany() == 1) {
-						money.setMonType("特殊");
-					} else
-						money.setMonType(task.getTasType());
-					money.setMonTime(new SimpleDateFormat("yyyy-MM-dd")
-							.format(new Date()));
-					objectDao.save(money);
+					Money money;
+					List<?> lis = objectDao.getObjectListBycond("Money",
+							"where monAlipay='" + user.getUseAlipay()
+									+ "' and monState in(0,2)");// 如果存在记录且是需要打款的，直接进行金额累计，否则新建一个打款记录
+					if (lis.size() > 0) {
+						money = (Money) lis.get(0);
+						money.setMonComment("综合打款");
+						money.setMonPay(money.getMonPay() + task.getTasPrice()
+								* (1 - FALSE_TAX));
+						if (task.getTasUser().getUseIscompany() == 1) {
+							if (!money.getMonType().equals("特殊任务"))
+								money.setMonType("多类任务综合");
+							else
+								money.setMonType("特殊任务综合");
+						} else {
+							if (!money.getMonType().equals(task.getTasType()))
+								money.setMonType("多类任务综合");
+							else
+								money.setMonType(money.getMonType() + "综合");
+						}
+					} else {
+						money = new Money();
+						money.setMonAlipay(user.getUseAlipay());
+						money.setMonComment("");
+						money.setMonName(user.getUseName());
+						money
+								.setMonNo(new SimpleDateFormat(
+										"yyyyMMddHHmmssSSS").format(new Date())
+										+ user.getUseSno().substring(
+												user.getUseSno().length() - 4));
+						money.setMonPay(task.getTasPrice() * (1 - FALSE_TAX));
+						money.setMonState(0);// 未打钱
+						money.setMonPhone(user.getUsePhone());
+						if (task.getTasUser().getUseIscompany() == 1) {
+							money.setMonType("特殊任务");
+						} else
+							money.setMonType(task.getTasType());
+						money.setMonTime(new SimpleDateFormat("yyyy-MM-dd")
+								.format(new Date()));
+					}
+					objectDao.saveOrUpdate(money);
 					/** 返钱结束 */
 
 					/** 能力 **/
@@ -292,26 +330,49 @@ class MyRunable implements Runnable {
 						Users user = apply.getAppBeUser();
 
 						/** 打钱 */
-						Money money = new Money();
-						money.setMonAlipay(user.getUseAlipay());
-						money.setMonComment("");
-						money.setMonName(user.getUseName());
-						money
-								.setMonNo(new SimpleDateFormat(
-										"yyyyMMddHHmmssSSS").format(new Date())
-										+ user.getUseSno().substring(
-												user.getUseSno().length() - 4));
-						money.setMonPay(task.getTasPrice() * (1 - SUCCESS_TAX)
-								/ set.size());
-						money.setMonState(0);// 未打钱
-						money.setMonPhone(user.getUsePhone());
-						if (task.getTasUser().getUseIscompany() == 1) {
-							money.setMonType("特殊");
-						} else
-							money.setMonType(task.getTasType());
-						money.setMonTime(new SimpleDateFormat("yyyy-MM-dd")
-								.format(new Date()));
-						objectDao.save(money);
+						Money money;
+						List<?> lis = objectDao.getObjectListBycond("Money",
+								"where monAlipay='" + user.getUseAlipay()
+										+ "' and monState in(0,2)");// 如果存在记录且是需要打款的，直接进行金额累计，否则新建一个打款记录
+						if (lis.size() > 0) {
+							money = (Money) lis.get(0);
+							money.setMonComment("综合打款");
+							money.setMonPay(money.getMonPay()
+									+ task.getTasPrice() * (1 - SUCCESS_TAX)
+									/ set.size());
+							if (task.getTasUser().getUseIscompany() == 1) {
+								if (!money.getMonType().equals("特殊任务"))
+									money.setMonType("多类任务综合");
+								else
+									money.setMonType("特殊任务综合");
+							} else {
+								if (!money.getMonType().equals(
+										task.getTasType()))
+									money.setMonType("多类任务综合");
+								else
+									money.setMonType(money.getMonType() + "综合");
+							}
+						} else {
+							money = new Money();
+							money.setMonAlipay(user.getUseAlipay());
+							money.setMonComment("");
+							money.setMonName(user.getUseName());
+							money.setMonNo(new SimpleDateFormat(
+									"yyyyMMddHHmmssSSS").format(new Date())
+									+ user.getUseSno().substring(
+											user.getUseSno().length() - 4));
+							money.setMonPay(task.getTasPrice()
+									* (1 - SUCCESS_TAX) / set.size());
+							money.setMonState(0);// 未打钱
+							money.setMonPhone(user.getUsePhone());
+							if (task.getTasUser().getUseIscompany() == 1) {
+								money.setMonType("特殊任务");
+							} else
+								money.setMonType(task.getTasType());
+							money.setMonTime(new SimpleDateFormat("yyyy-MM-dd")
+									.format(new Date()));
+						}
+						objectDao.saveOrUpdate(money);
 						/** 打钱结束 */
 
 						/** 支付日志 **/

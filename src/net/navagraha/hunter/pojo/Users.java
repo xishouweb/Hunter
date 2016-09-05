@@ -32,6 +32,7 @@ public class Users implements java.io.Serializable {
 	private Integer useIscompany;
 	private Integer useIsonline;
 	private Integer useIslogin;
+	private Double useRemain;
 
 	// Property accessors
 
@@ -257,6 +258,14 @@ public class Users implements java.io.Serializable {
 
 	public Integer getUseIslogin() {
 		return useIslogin;
+	}
+
+	public void setUseRemain(Double useRemain) {
+		this.useRemain = useRemain;
+	}
+
+	public Double getUseRemain() {
+		return useRemain;
 	}
 
 }

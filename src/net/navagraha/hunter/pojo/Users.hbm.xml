@@ -90,6 +90,9 @@
         <property name="useIslogin" type="java.lang.Integer">
             <column name="use_islogin" not-null="true" />
         </property>
+        <property name="useRemain" type="java.lang.Double">
+            <column name="use_remain" not-null="true" />
+        </property>
         
     </class>
 </hibernate-mapping>

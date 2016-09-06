@@ -9,6 +9,7 @@ import java.util.Set;
 
 import net.navagraha.hunter.pojo.Apply;
 import net.navagraha.hunter.pojo.Census;
+import net.navagraha.hunter.pojo.Money;
 import net.navagraha.hunter.pojo.Tag;
 import net.navagraha.hunter.pojo.Task;
 import net.navagraha.hunter.pojo.Users;
@@ -42,6 +43,7 @@ public class UserAction {
 	private String useSign;
 	private String useAlipay;
 	private int tasId;
+	private double payNum;
 
 	// 反馈到前台
 
@@ -103,19 +105,16 @@ public class UserAction {
 					if (user.getUseEmei().equals(useEmei)) {
 						do4User(user);// 记录用户
 						setCode("1");// 登录成功
-					} else {
+					} else
 						setCode("8");// 不是本机登陆
-					}
 				} else {
 					do4User(user);// 记录用户
 					setCode("1");// 登录成功
 				}
 			} else
 				setCode("0");// 登录失败
-
-		} else {
+		} else
 			setCode("17");// 手机号未激活
-		}
 		return "success";
 	}
 
@@ -152,19 +151,6 @@ public class UserAction {
 		if (onlineNum > census.getCenOnlinenum())
 			census.setCenOnlinenum(onlineNum);
 		giveDao().saveOrUpdate(census);
-
-		// 统计当前账户余额
-		Object object = ServletActionContext.getServletContext().getAttribute(
-				"Money");
-		if (object == null) {
-			int userNum = Integer.parseInt(giveDao().getObjectListBycond(
-					"select count(*) from Users where useIscompany!=2").get(0)
-					.toString());
-			ServletActionContext.getServletContext().setAttribute("Money",
-					userNum * 10 - 10);
-		} else
-			ServletActionContext.getServletContext().setAttribute("Money",
-					(Integer) object - 10);
 
 		// 记录标签
 		List<?> list = giveDao().getObjectListByfield("Tag", "tagUser", user);
@@ -221,16 +207,6 @@ public class UserAction {
 		} catch (Exception e) {
 			return false;
 		}
-	}
-
-	// 获取当前账户余额
-	public String giveMoney() {
-		Object object = ServletActionContext.getServletContext().getAttribute(
-				"Money");
-		if (object == null) {
-			json.put("Money", (String) object);
-		}
-		return "success";
 	}
 
 	// 用户注销
@@ -577,6 +553,52 @@ public class UserAction {
 		return "success";
 	}
 
+	// 获取余额
+	public String giveUseRemain() {
+		Object obj = ServletActionContext.getRequest().getSession()
+				.getAttribute("Users");// 将登陆用户取出
+		Users user = obj != null ? (Users) obj : null;
+		if (user != null)
+			json.put("useRemain", user.getUseRemain());
+		return "success";
+	}
+
+	// 提现
+	public String giveMoney() {
+		Object obj = ServletActionContext.getRequest().getSession()
+				.getAttribute("Users");// 将登陆用户取出
+		Users user = obj != null ? (Users) obj : null;
+
+		if (user != null) {
+			user.setUseRemain(user.getUseRemain() - payNum - 1);
+
+			/** 提现 */
+			Money money = new Money();
+			money.setMonAlipay(user.getUseAlipay());
+			money.setMonComment("/");
+			money.setMonName(user.getUseName());
+			money
+					.setMonNo(new SimpleDateFormat("yyyyMMddHHmmssSSS")
+							.format(new Date())
+							+ user.getUseSno().substring(
+									user.getUseSno().length() - 4));
+			if (payNum < 10)
+				money.setMonPay(payNum - 1);// 少于10元，自己出支付宝服务费
+			else
+				money.setMonPay(payNum);// 不低于10元，平台帮出服务费
+			money.setMonState(0);// 提现
+			money.setMonPhone(user.getUsePhone());
+			money.setMonType("【用户提现】余额");
+			money.setMonTime(new SimpleDateFormat("yyyy-MM-dd")
+					.format(new Date()));
+			giveDao().save(money);
+			/** 提现结束 */
+			setCode("1");
+		} else
+			setCode("0");
+		return "success";
+	}
+
 	// 根据任务查找接受者用户
 	public String giveBeUsersByTasId() {
 		Object object = giveDao().getObjectById(Task.class, tasId);
@@ -669,4 +691,7 @@ public class UserAction {
 		this.useName = useName;
 	}
 
+	public void setPayNum(double payNum) {
+		this.payNum = payNum;
+	}
 }

@@ -19,7 +19,6 @@ public class ObjectDaoImpl implements ObjectDao {
 	private Transaction tran;
 
 	// 通过id查找对象
-	@SuppressWarnings("unchecked")
 	public Object getObjectById(Class cls, int id) {
 		try {
 			session = sessionFactory.openSession();
@@ -112,7 +111,6 @@ public class ObjectDaoImpl implements ObjectDao {
 	}
 
 	// 删除对象通过id
-	@SuppressWarnings("unchecked")
 	public void delete(Class cls, int id) {
 		try {
 			session = sessionFactory.openSession();

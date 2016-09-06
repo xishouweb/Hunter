@@ -134,6 +134,7 @@ public class Big2Small4PicUtil {
 	 *            生成目标图片的文件名
 	 * @throws JPGException
 	 */
+	@SuppressWarnings("deprecation")
 	public void transform(String srcPicFileName, String targetPicFileName)
 			throws JPGException {
 

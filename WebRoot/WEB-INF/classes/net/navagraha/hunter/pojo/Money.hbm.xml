@@ -27,7 +27,7 @@
             <column name="mon_state" not-null="true" />
         </property>
         <property name="monType" type="java.lang.String">
-            <column name="mon_type" length="10" />
+            <column name="mon_type" length="80" />
         </property>
         <property name="monTime" type="java.lang.String">
             <column name="mon_time" length="20" />

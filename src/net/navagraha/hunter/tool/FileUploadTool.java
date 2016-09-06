@@ -26,6 +26,7 @@ public class FileUploadTool {
 	// 上传图片
 	public String uploadImg() throws IOException {
 		// 得到工程保存图片的路径
+		@SuppressWarnings("deprecation")
 		String root = ServletActionContext.getRequest().getRealPath("/upload");
 
 		InputStream is;
@@ -67,8 +68,8 @@ public class FileUploadTool {
 					setCode("0");
 				is.close();
 			} else {// 不是头像
-				ServletActionContext.getRequest().getSession().setAttribute(
-						"ImgPath", "upload/" + fileFileName);
+				ServletActionContext.getRequest().getSession()
+						.setAttribute("ImgPath", "upload/" + fileFileName);
 
 				// 得到图片保存的位置(根据root来得到图片保存的路径在Tomcat下的该工程里)
 				File destFile = new File(root, fileFileName);

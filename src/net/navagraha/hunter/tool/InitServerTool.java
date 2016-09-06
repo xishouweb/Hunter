@@ -79,42 +79,27 @@ class MyRunable implements Runnable {
 		String sysTime = new SimpleDateFormat("HH:mm").format(new Date());
 		if (ruleTime.equals(sysTime)) {
 			/** 获取前三进行处理 */
-			List<?> list = objectDao.getSomeObjectListBycond(
+			List<?> list = giveDao().getSomeObjectListBycond(
 					"from Tag order by tagTimeout desc", 3);
 			for (Object object : list) {
 				Tag tag = (Tag) object;
 				Users user = tag.getTagUser();
 				// 发放奖励
-				Money money;
-				List<?> lis = objectDao.getObjectListBycond("Money",
-						"where monAlipay='" + user.getUseAlipay()
-								+ "' and monState in(0,2)");// 如果存在记录且是需要打款的，直接进行金额累计，否则新建一个打款记录
-				if (lis.size() > 0) {
-					money = (Money) lis.get(0);
-					money.setMonComment("综合打款");
-					money.setMonPay(money.getMonPay() + 50.0);
-					// 当前属于特殊任务打款50.0
-					if (!money.getMonType().equals("特殊任务"))
-						money.setMonType("多类任务综合");
-					else
-						money.setMonType("特殊任务综合");
-				} else {
-					money = new Money();
-					money.setMonAlipay(user.getUseAlipay());
-					money.setMonComment("平台测试每天在线时长前三名用户，进行奖励");
-					money.setMonName(user.getUseName());
-					money.setMonNo(new SimpleDateFormat("yyyyMMddHHmmssSSS")
-							.format(new Date())
-							+ user.getUseSno().substring(
-									user.getUseSno().length() - 4));
-					money.setMonPay(50.0);
-					money.setMonPhone(user.getUsePhone());
-					money.setMonState(0);// 未打钱
-					money.setMonType("特殊任务");
-					money.setMonTime(new SimpleDateFormat("yyyy-MM-dd")
-							.format(new Date()));
-				}
-				objectDao.saveOrUpdate(money);
+				Money money = new Money();
+				money.setMonAlipay(user.getUseAlipay());
+				money.setMonComment("/");
+				money.setMonName(user.getUseName());
+				money.setMonNo(new SimpleDateFormat("yyyyMMddHHmmssSSS")
+						.format(new Date())
+						+ user.getUseSno().substring(
+								user.getUseSno().length() - 4));
+				money.setMonPay(50.0);
+				money.setMonPhone(user.getUsePhone());
+				money.setMonState(0);// 提现
+				money.setMonType("【内测活动】在线时长前三名");
+				money.setMonTime(new SimpleDateFormat("yyyy-MM-dd")
+						.format(new Date()));
+				giveDao().save(money);
 			}
 			/** 处理结束 */
 
@@ -125,26 +110,26 @@ class MyRunable implements Runnable {
 			int day = Integer.parseInt(time[1]);
 
 			// 获取激活总人数
-			Object obj1 = objectDao
-					.getObjectSizeBycond("select count(*) from Users where useIscompany in(0,1)");
+			Object obj1 = giveDao().getObjectSizeBycond(
+					"select count(*) from Users where useIscompany in(0,1)");
 			int activeTotal = obj1 != null ? (Integer) obj1 : 0;
 
 			// 获取当天登录总人数
-			Object obj2 = objectDao
-					.getObjectSizeBycond("select count(*) from Users where useIslogin=1");
+			Object obj2 = giveDao().getObjectSizeBycond(
+					"select count(*) from Users where useIslogin=1");
 			int loginNum = obj2 != null ? (Integer) obj2 : 0;
-			objectDao
-					.executeUpdate("update Users set useIslogin=0 where useIslogin=1");// 初始化当天登录状态
+			giveDao().executeUpdate(
+					"update Users set useIslogin=0 where useIslogin=1");// 初始化当天登录状态
 
 			// 获取昨天激活总人数
 			String oldTime[] = getDateBeforeNow(1, "yyyy-MM,dd").split(",");
-			int oldactiveTotal = objectDao
-					.getObjectSizeBycond("select cenActivetotal from Census where cenMonth='"
+			int oldactiveTotal = giveDao().getObjectSizeBycond(
+					"select cenActivetotal from Census where cenMonth='"
 							+ oldTime[0] + "' and cenDay=" + oldTime[1]);
 
-			List<?> li = objectDao
-					.getObjectListBycond("from Census where cenMonth='" + month
-							+ "' and cenDay=" + day);
+			List<?> li = giveDao().getObjectListBycond(
+					"from Census where cenMonth='" + month + "' and cenDay="
+							+ day);
 			Census census;
 			if (li.size() < 1) {
 				census = new Census();
@@ -157,7 +142,7 @@ class MyRunable implements Runnable {
 			census.setCenLoginnum(loginNum);
 			census.setCenActivetotal(activeTotal);
 			census.setCenActivenum(activeTotal - oldactiveTotal);
-			objectDao.saveOrUpdate(census);
+			giveDao().saveOrUpdate(census);
 			/** 设置当天统计结束 */
 
 		}
@@ -169,59 +154,36 @@ class MyRunable implements Runnable {
 				.format(new Date());
 		String hql = "where tasTimeout<='" + sysTime
 				+ "' and tasState in (0,1,2)";
-		List<?> list = objectDao.getObjectListBycond("Task", hql);
+		List<?> list = giveDao().getObjectListBycond("Task", hql);
 		if (list.size() > 0) {
 			System.out.println("【超过时间失效】：本次设置" + list.size() + "条任务状态为失败");
 			for (Object object : list) {
 				Task task = (Task) object;
 				if (task.getTasState() < 2 || task.getTasType().equals("加急个人")) {// 到规定时间都没有人接受任务或者任务为加急任务
 					task.setTasState(5);// 任务失败
-					objectDao.update(task);
+					giveDao().update(task);
 					Users user = task.getTasUser();
+					user.setUseRemain(user.getUseRemain() + task.getTasPrice()
+							* (1 - FALSE_TAX));// 存入余额
+					giveDao().update(user);
 
-					/** 返钱 */
-					Money money;
-					List<?> lis = objectDao.getObjectListBycond("Money",
-							"where monAlipay='" + user.getUseAlipay()
-									+ "' and monState in(0,2)");// 如果存在记录且是需要打款的，直接进行金额累计，否则新建一个打款记录
-					if (lis.size() > 0) {
-						money = (Money) lis.get(0);
-						money.setMonComment("综合打款");
-						money.setMonPay(money.getMonPay() + task.getTasPrice()
-								* (1 - FALSE_TAX));
-						if (task.getTasUser().getUseIscompany() == 1) {
-							if (!money.getMonType().equals("特殊任务"))
-								money.setMonType("多类任务综合");
-							else
-								money.setMonType("特殊任务综合");
-						} else {
-							if (!money.getMonType().equals(task.getTasType()))
-								money.setMonType("多类任务综合");
-							else
-								money.setMonType(money.getMonType() + "综合");
-						}
-					} else {
-						money = new Money();
-						money.setMonAlipay(user.getUseAlipay());
-						money.setMonComment("");
-						money.setMonName(user.getUseName());
-						money
-								.setMonNo(new SimpleDateFormat(
-										"yyyyMMddHHmmssSSS").format(new Date())
-										+ user.getUseSno().substring(
-												user.getUseSno().length() - 4));
-						money.setMonPay(task.getTasPrice() * (1 - FALSE_TAX));
-						money.setMonState(0);// 未打钱
-						money.setMonPhone(user.getUsePhone());
-						if (task.getTasUser().getUseIscompany() == 1) {
-							money.setMonType("特殊任务");
-						} else
-							money.setMonType(task.getTasType());
-						money.setMonTime(new SimpleDateFormat("yyyy-MM-dd")
-								.format(new Date()));
-					}
-					objectDao.saveOrUpdate(money);
-					/** 返钱结束 */
+					/** 返钱记录 */
+					Money money = new Money();
+					money.setMonAlipay(user.getUseAlipay());
+					money.setMonComment("/");
+					money.setMonName(user.getUseName());
+					money.setMonNo(new SimpleDateFormat("yyyyMMddHHmmssSSS")
+							.format(new Date())
+							+ user.getUseSno().substring(
+									user.getUseSno().length() - 4));
+					money.setMonPay(task.getTasPrice() * (1 - FALSE_TAX));
+					money.setMonState(3);// 打钱（不显示）
+					money.setMonPhone(user.getUsePhone());
+					money.setMonType("【超时任务】返金");
+					money.setMonTime(new SimpleDateFormat("yyyy-MM-dd")
+							.format(new Date()));
+					giveDao().save(money);
+					/** 返钱记录结束 */
 
 					/** 能力 **/
 					Set<Apply> set = task.getTasApplies();
@@ -229,11 +191,11 @@ class MyRunable implements Runnable {
 
 						if (apply.getAppState() == 1) {// 任务的真实接受者才进行扣信誉
 							apply.setAppState(4);// 任务失败
-							objectDao.update(apply);
+							giveDao().update(apply);
 
 							Users beUser = apply.getAppBeUser();
 							// 获取任务接收者的power
-							List<?> list3 = objectDao.getObjectListByfield(
+							List<?> list3 = giveDao().getObjectListByfield(
 									"Power", "powUser", beUser);
 							Power power;
 
@@ -246,7 +208,7 @@ class MyRunable implements Runnable {
 								power.setPowUser(beUser);
 								power.setPowFast(0);
 							}
-							objectDao.saveOrUpdate(power);
+							giveDao().saveOrUpdate(power);
 						}
 					}
 					/** 能力结束 **/
@@ -256,7 +218,7 @@ class MyRunable implements Runnable {
 					Pay payOut;
 
 					// 获取任务发布者的pay
-					List<?> list1 = objectDao.getObjectListByfield("Pay",
+					List<?> list1 = giveDao().getObjectListByfield("Pay",
 							new String[] { "payTime", "payUser" },
 							new Object[] { sdf.format(new Date()), user });
 
@@ -273,12 +235,12 @@ class MyRunable implements Runnable {
 						payOut.setPayOut(task.getTasPrice() * FALSE_TAX);
 						payOut.setPayUser(task.getTasUser());
 					}
-					objectDao.saveOrUpdate(payOut);
+					giveDao().saveOrUpdate(payOut);
 					/** 支付日志结束 **/
 
 				} else {
 					task.setTasState(6);
-					objectDao.update(task);
+					giveDao().update(task);
 				}
 			}
 		}
@@ -289,7 +251,7 @@ class MyRunable implements Runnable {
 
 		String oldTime = getDateBeforeNow(EXPIRE_DAY, "yyyy-MM-dd HH:mm:ss");
 		String hql = "where tasState=3 and tasFinishtime<='" + oldTime + "'";
-		List<?> list = objectDao.getObjectListBycond("Task", hql);
+		List<?> list = giveDao().getObjectListBycond("Task", hql);
 		if (list.size() > 0) {
 			System.out.println("【超过时间未通过任务自动打钱】：本次给" + list.size() + "个用户自动打钱");
 			for (Object object : list) {
@@ -301,9 +263,11 @@ class MyRunable implements Runnable {
 				Pay payOut;
 
 				// 获取任务发布者的pay
-				List<?> list1 = objectDao.getObjectListByfield("Pay",
-						new String[] { "payTime", "payUser" }, new Object[] {
-								sdf.format(new Date()), task.getTasUser() });
+				List<?> list1 = giveDao().getObjectListByfield(
+						"Pay",
+						new String[] { "payTime", "payUser" },
+						new Object[] { sdf.format(new Date()),
+								task.getTasUser() });
 
 				if (list1.size() > 0) {
 					// 支出
@@ -318,67 +282,44 @@ class MyRunable implements Runnable {
 					payOut.setPayOut(task.getTasPrice() * 1.0);
 					payOut.setPayUser(task.getTasUser());
 				}
-				objectDao.saveOrUpdate(payOut);
+				giveDao().saveOrUpdate(payOut);
 				/** 支付日志结束 **/
 
 				for (Apply apply : set) {
 
 					if (apply.getAppState() == 1) {// 为该任务的实际接受者
 						apply.setAppState(3);// 任务成功
-						objectDao.update(apply);
+						giveDao().update(apply);
 
 						Users user = apply.getAppBeUser();
+						user.setUseRemain(task.getTasPrice()
+								* (1 - SUCCESS_TAX) / set.size());// 存入余额
+						giveDao().update(user);
 
-						/** 打钱 */
-						Money money;
-						List<?> lis = objectDao.getObjectListBycond("Money",
-								"where monAlipay='" + user.getUseAlipay()
-										+ "' and monState in(0,2)");// 如果存在记录且是需要打款的，直接进行金额累计，否则新建一个打款记录
-						if (lis.size() > 0) {
-							money = (Money) lis.get(0);
-							money.setMonComment("综合打款");
-							money.setMonPay(money.getMonPay()
-									+ task.getTasPrice() * (1 - SUCCESS_TAX)
-									/ set.size());
-							if (task.getTasUser().getUseIscompany() == 1) {
-								if (!money.getMonType().equals("特殊任务"))
-									money.setMonType("多类任务综合");
-								else
-									money.setMonType("特殊任务综合");
-							} else {
-								if (!money.getMonType().equals(
-										task.getTasType()))
-									money.setMonType("多类任务综合");
-								else
-									money.setMonType(money.getMonType() + "综合");
-							}
-						} else {
-							money = new Money();
-							money.setMonAlipay(user.getUseAlipay());
-							money.setMonComment("");
-							money.setMonName(user.getUseName());
-							money.setMonNo(new SimpleDateFormat(
-									"yyyyMMddHHmmssSSS").format(new Date())
-									+ user.getUseSno().substring(
-											user.getUseSno().length() - 4));
-							money.setMonPay(task.getTasPrice()
-									* (1 - SUCCESS_TAX) / set.size());
-							money.setMonState(0);// 未打钱
-							money.setMonPhone(user.getUsePhone());
-							if (task.getTasUser().getUseIscompany() == 1) {
-								money.setMonType("特殊任务");
-							} else
-								money.setMonType(task.getTasType());
-							money.setMonTime(new SimpleDateFormat("yyyy-MM-dd")
-									.format(new Date()));
-						}
-						objectDao.saveOrUpdate(money);
-						/** 打钱结束 */
+						/** 打钱记录 */
+						Money money = new Money();
+						money.setMonAlipay(user.getUseAlipay());
+						money.setMonComment("/");
+						money.setMonName(user.getUseName());
+						money
+								.setMonNo(new SimpleDateFormat(
+										"yyyyMMddHHmmssSSS").format(new Date())
+										+ user.getUseSno().substring(
+												user.getUseSno().length() - 4));
+						money.setMonPay(task.getTasPrice() * (1 - SUCCESS_TAX)
+								/ set.size());
+						money.setMonState(3);// 打钱（不显示）
+						money.setMonPhone(user.getUsePhone());
+						money.setMonType("【超时未通过任务】赏金");
+						money.setMonTime(new SimpleDateFormat("yyyy-MM-dd")
+								.format(new Date()));
+						giveDao().save(money);
+						/** 打钱记录结束 */
 
 						/** 支付日志 **/
 						// 获取任务收人者的pay
 						Pay payIn;
-						List<?> list2 = objectDao.getObjectListByfield("Pay",
+						List<?> list2 = giveDao().getObjectListByfield("Pay",
 								new String[] { "payTime", "payUser" },
 								new Object[] { sdf.format(new Date()), user });
 
@@ -408,13 +349,13 @@ class MyRunable implements Runnable {
 										* (1 - SUCCESS_TAX));
 							payIn.setPayUser(user);
 						}
-						objectDao.saveOrUpdate(payIn);
+						giveDao().saveOrUpdate(payIn);
 						/** 支付日志结束 **/
 
 					}
 				}
 				task.setTasState(4);// 任务成功
-				objectDao.update(task);
+				giveDao().update(task);
 			}
 		}
 	}
@@ -430,6 +371,13 @@ class MyRunable implements Runnable {
 		date = calendar.getTime();
 
 		return df.format(date);
+	}
+
+	/** 获取Dao */
+	public ObjectDao giveDao() {
+		if (objectDao == null)
+			objectDao = new ObjectDaoImpl();
+		return objectDao;
 	}
 
 }

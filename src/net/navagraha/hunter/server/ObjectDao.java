@@ -11,7 +11,6 @@ public interface ObjectDao {
 	 * @param id
 	 * @return
 	 */
-	@SuppressWarnings("unchecked")
 	public Object getObjectById(Class cls, int id);
 
 	/**
@@ -58,7 +57,6 @@ public interface ObjectDao {
 	 * @param cls
 	 * @param id
 	 */
-	@SuppressWarnings("unchecked")
 	public void delete(Class cls, int id);
 
 	/**

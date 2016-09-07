@@ -42,6 +42,7 @@ public class UserAction {
 	private String useCond;
 	private String useSign;
 	private String useAlipay;
+	private String mode;
 	private int tasId;
 	private double payNum;
 
@@ -62,13 +63,13 @@ public class UserAction {
 	// #用户激活
 	public String activate() {
 
-		// TODO 查询已激活学生人数,内测限定100(投入时取消)
-		int size = giveDao().getObjectSizeBycond(
-				"select count(*) from Users where useIscompany==0");
-		if (size > 100) {
-			setCode("20");
-			return "success";
-		}
+		// // 查询已激活学生人数,内测限定100(投入时取消)
+		// int size = giveDao().getObjectSizeBycond(
+		// "select count(*) from Users where useIscompany==0");
+		// if (size > 100) {
+		// setCode("20");
+		// return "success";
+		// }
 
 		List<?> list = giveDao().getObjectListByfieldInActivate("Users",
 				"useSno", useSno);
@@ -118,10 +119,10 @@ public class UserAction {
 		return "success";
 	}
 
-	// #记录用户
+	// 记录用户
 	private void do4User(Users user) {
-		ServletActionContext.getRequest().getSession().setAttribute("Users",
-				user);// 将登陆用户保存到session
+		ServletActionContext.getRequest().getSession()
+				.setAttribute("Users", user);// 将登陆用户保存到session
 
 		user.setUseIsonline(1);// 设置用户在线状态
 		user.setUseIslogin(1);// 设置该用户今日已登录
@@ -193,8 +194,26 @@ public class UserAction {
 			d++;
 		tag.setTagLogtime(a + "," + b + "," + c + "," + d);
 		giveDao().saveOrUpdate(tag);
-		ServletActionContext.getRequest().getSession().setAttribute("Logtime",
-				new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date()));// 存储登录时间
+		ServletActionContext
+				.getRequest()
+				.getSession()
+				.setAttribute(
+						"Logtime",
+						new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
+								.format(new Date()));// 存储登录时间
+	}
+
+	/** 计算两个时间的差，单位：分 */
+	private static long getMinutesBetween(String s1, String s2) {
+		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss");
+		try {
+			Date dt1 = sdf.parse(s1);
+			Date dt2 = sdf.parse(s2);
+			return (dt1.getTime() - dt2.getTime()) / (60 * 1000);
+		} catch (Exception e) {
+			return 0;
+		}
+
 	}
 
 	/** 比较两个时间 */
@@ -219,7 +238,8 @@ public class UserAction {
 			String Logtime = object1.toString();
 			diff = getMinutesBetween(
 					new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
-							.format(new Date()), Logtime);
+							.format(new Date()),
+					Logtime);
 		}
 
 		// 将登录时长加到数据库
@@ -235,38 +255,13 @@ public class UserAction {
 						+ Integer.valueOf("" + diff));
 				giveDao().update(tag);
 			}
-
-		} else
-			return "success";// 非正规渠道注销
-
-		// 将账户余额自动增加8
-		Object object = ServletActionContext.getServletContext().getAttribute(
-				"Money");
-		if (object != null) {
-			ServletActionContext.getServletContext().setAttribute("Money",
-					(Integer) object + 8);
+			// 设置用户在线状态
+			user.setUseIsonline(0);
+			giveDao().update(user);
 		}
-
-		// 设置用户在线状态
-		user.setUseIsonline(0);
-		giveDao().update(user);
-
 		ServletActionContext.getRequest().getSession().invalidate();// 清空session
 
 		return "success";
-	}
-
-	/** 计算两个时间的差，单位：分 */
-	private static long getMinutesBetween(String s1, String s2) {
-		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss");
-		try {
-			Date dt1 = sdf.parse(s1);
-			Date dt2 = sdf.parse(s2);
-			return (dt1.getTime() - dt2.getTime()) / (60 * 1000);
-		} catch (Exception e) {
-			return 0;
-		}
-
 	}
 
 	// 设置收款账户
@@ -276,19 +271,27 @@ public class UserAction {
 		Users user = object != null ? (Users) object : null;
 
 		if (user != null) {
-			user.setUseAlipay(useAlipay);
-			user.setUseName(useName);
-			giveDao().update(user);
-			setCode("1");// 修改收款账户成功
+			Object obj = ServletActionContext.getRequest().getSession()
+					.getAttribute("phone_yzm");
+			String sysPhoneCode = obj != null ? (String) obj : "";
+			if (phoneCode.equals(sysPhoneCode)) {
+				user.setUseAlipay(useAlipay);
+				user.setUseName(useName);
+				giveDao().update(user);
+				setCode("1");// 修改收款账户成功
+			} else
+				setCode("7");// 手机验证码验证不成功
 		} else
 			setCode("0");// 修改收款账户失败
 
 		return "success";
 	}
 
-	// 用户验证短信发送
+	// 用户验证码发送
 	public String sendPhone() {
-		if (useSno != null) {// 表示验证码模式-yzm
+
+		// 验证码模式-yzm
+		if (useSno != null) {// 激活验证码
 			List<?> list = giveDao().getObjectListByfieldInActivate("Users",
 					"useSno", useSno);
 			Users user = list.size() > 0 ? (Users) list.get(0) : null;
@@ -296,9 +299,9 @@ public class UserAction {
 				if (user.getUsePwd().equals(usePwd)) {
 					Random random = new Random();
 					String code = "";
-					for (int i = 0; i < 6; i++) {
+					for (int i = 0; i < 6; i++)
 						code += random.nextInt(10);
-					}
+
 					ServletActionContext.getRequest().getSession()
 							.setAttribute("phone_yzm", code);
 					if (PhoneCodeTool.send(usePhone, code, "yzm")) {
@@ -310,65 +313,82 @@ public class UserAction {
 			} else {
 				setCode("4");// 考号/学号不存在
 			}
-		} else {// 忘记密码模式-pwd
-			List<?> list = giveDao().getObjectListByfield("Users", "usePhone",
-					usePhone);
-			Users user = list.size() > 0 ? (Users) list.get(0) : null;
-			if (user != null) {
-				if (PhoneCodeTool.send(user.getUsePhone(), user.getUsePwd(),
-						"pwd"))
-					setCode("5");// 发送成功
-				else
-					setCode("6");// 发送失败
-			} else
-				setCode("17");// 手机号未激活
 		}
+		Object object = ServletActionContext.getRequest().getSession()
+				.getAttribute("Users");// 将登陆用户取出
+		Users user = object != null ? (Users) object : null;
 
-		return "success";
-	}
+		if (mode != null && mode.equals("new")) {// 重绑手机验证码
 
-	/** 用户验证短信发送 */
-	private String sendPhoneCode() {
-
-		if (useSno != null) {// 表示验证码模式-yzm
-			List<?> list = giveDao().getObjectListByfieldInActivate("Users",
-					"useSno", useSno);
-			Users user = list.size() > 0 ? (Users) list.get(0) : null;
-			if (user != null && user.getUseId() > 0) {
+			if (user != null) {
+				List<?> list = giveDao().getObjectListByfield("Users",
+						"usePhone", usePhone);
+				if (list.size() > 0) {
+					setCode("18");// 手机号已存在
+					return "success";
+				}
 				Random random = new Random();
 				String code = "";
-				for (int i = 0; i < 6; i++) {
+				for (int i = 0; i < 6; i++)
 					code += random.nextInt(10);
-				}
-				ServletActionContext.getRequest().getSession().setAttribute(
-						"phone_yzm", code);
+
+				ServletActionContext.getRequest().getSession()
+						.setAttribute("phone_yzm", code);
+
 				if (PhoneCodeTool.send(usePhone, code, "yzm"))
 					setCode("5");// 发送成功
 				else
 					setCode("6");// 发送失败
-			} else {
-				setCode("4");// 考号/学号不存在
 			}
-		} else {// 忘记密码模式-pwd
-			List<?> list = giveDao().getObjectListByfield("Users", "usePhone",
-					usePhone);
-			Users user = list.size() > 0 ? (Users) list.get(0) : null;
+		}
+		if (mode != null && mode.equals("server")) {// 服务器验证码发送（无需phone）
+
 			if (user != null) {
-				if (PhoneCodeTool.send(user.getUsePhone(), user.getUsePwd(),
-						"pwd"))
+				Random random = new Random();
+				String code = "";
+				for (int i = 0; i < 6; i++)
+					code += random.nextInt(10);
+
+				ServletActionContext.getRequest().getSession()
+						.setAttribute("phone_yzm", code);
+
+				if (PhoneCodeTool.send(user.getUsePhone(), code, "yzm"))
 					setCode("5");// 发送成功
 				else
 					setCode("6");// 发送失败
-			} else
-				setCode("17");// 手机号未激活
-		}
+			}
+		} else {// 普通验证码发送
+			Random random = new Random();
+			String code = "";
+			for (int i = 0; i < 6; i++)
+				code += random.nextInt(10);
 
+			ServletActionContext.getRequest().getSession()
+					.setAttribute("phone_yzm", code);
+
+			if (PhoneCodeTool.send(usePhone, code, "yzm"))
+				setCode("5");// 发送成功
+			else
+				setCode("6");// 发送失败
+		}
 		return "success";
 	}
 
-	// #用户忘记密码
+	// 用户忘记密码
 	public String forgetPass() {
-		sendPhoneCode();
+
+		// 忘记密码模式-pwd
+		List<?> list = giveDao().getObjectListByfield("Users", "usePhone",
+				usePhone);
+		Users user = list.size() > 0 ? (Users) list.get(0) : null;
+		if (user != null) {
+			if (PhoneCodeTool.send(user.getUsePhone(), user.getUsePwd(), "pwd"))
+				setCode("5");// 发送成功
+			else
+				setCode("6");// 发送失败
+		} else
+			setCode("17");// 手机号未激活
+
 		return "success";
 	}
 
@@ -391,26 +411,27 @@ public class UserAction {
 
 	// 用户修改手机号
 	public String updatePhone() {
-
 		Object object = ServletActionContext.getRequest().getSession()
 				.getAttribute("Users");// 将登陆用户取出
 		Users user = object != null ? (Users) object : null;
 
 		if (user != null) {
-			setUseSno(user.getUseSno());
-			List<?> list = giveDao().getObjectListByfield("Users", "usePhone",
-					usePhone);
-			if (list.size() > 0) {
-				setCode("18");// 手机号已存在
-				return "success";
-			}
-			sendPhoneCode();
-		}
 
+			Object obj = ServletActionContext.getRequest().getSession()
+					.getAttribute("phone_yzm");
+			String sysPhoneCode = obj != null ? (String) obj : "";
+			if (phoneCode.equals(sysPhoneCode)) {
+				user.setUsePhone(usePhone);
+				user.setUseEmei(useEmei);
+				giveDao().update(user);
+				setCode("1");// 绑定成功
+			} else
+				setCode("7");// 手机验证码验证不成功
+		}
 		return "success";
 	}
 
-	// #用户信息修改
+	// 用户信息修改
 	public String updateInfo() {
 		Object object = ServletActionContext.getRequest().getSession()
 				.getAttribute("Users");// 将登陆用户取出
@@ -422,8 +443,8 @@ public class UserAction {
 		if (user != null && user.getUseId() > 0) {
 			if (list.size() > 0) {
 				for (Object object2 : list) {
-					if (!((Users) object2).getUseId().toString().equals(
-							user.getUseId().toString())) {
+					if (!((Users) object2).getUseId().toString()
+							.equals(user.getUseId().toString())) {
 						setCode("2");// 昵称重名
 						return "success";
 					}
@@ -446,22 +467,7 @@ public class UserAction {
 		return "success";
 	}
 
-	// 验证验证码，绑定手机号
-	public String checkPhone() {
-
-		Object object = ServletActionContext.getRequest().getSession()
-				.getAttribute("Users");// 将登陆用户取出
-		Users user = object != null ? (Users) object : null;
-
-		if (user != null) {
-			setUseSno(user.getUseSno());
-			activate();
-		}
-
-		return "success";
-	}
-
-	// 获取当前用户
+	// #获取当前用户
 	public String giveCurrentUser() {
 
 		Object object = ServletActionContext.getRequest().getSession()
@@ -510,7 +516,7 @@ public class UserAction {
 		return "success";
 	}
 
-	// 用户点赞
+	// #用户点赞
 	public String dianZan() {
 
 		Object object = giveDao().getObjectById(Users.class, useId);
@@ -536,7 +542,7 @@ public class UserAction {
 		return "success";
 	}
 
-	// 搜索用户
+	// #搜索用户
 	public String giveUserByCond() {
 
 		String cond = "where useShowsign==1 and (useNickname=" + useCond
@@ -577,11 +583,9 @@ public class UserAction {
 			money.setMonAlipay(user.getUseAlipay());
 			money.setMonComment("/");
 			money.setMonName(user.getUseName());
-			money
-					.setMonNo(new SimpleDateFormat("yyyyMMddHHmmssSSS")
-							.format(new Date())
-							+ user.getUseSno().substring(
-									user.getUseSno().length() - 4));
+			money.setMonNo(new SimpleDateFormat("yyyyMMddHHmmssSSS")
+					.format(new Date())
+					+ user.getUseSno().substring(user.getUseSno().length() - 4));
 			if (payNum < 10)
 				money.setMonPay(payNum - 1);// 少于10元，自己出支付宝服务费
 			else
@@ -693,5 +697,9 @@ public class UserAction {
 
 	public void setPayNum(double payNum) {
 		this.payNum = payNum;
+	}
+
+	public void setMode(String mode) {
+		this.mode = mode;
 	}
 }

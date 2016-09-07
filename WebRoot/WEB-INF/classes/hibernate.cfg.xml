@@ -12,7 +12,7 @@
 			jdbc:mysql://127.0.0.1:3306/hunter?useUnicode=true&amp;characterEncoding=UTF-8
 		</property>
 		<property name="connection.username">root</property>
-		<property name="connection.password">123456</property>
+		<property name="connection.password">197347Rcl**</property>
 		<property name="connection.driver_class">
 			com.mysql.jdbc.Driver
 		</property>

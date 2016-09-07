@@ -44,28 +44,32 @@ public class TaskAction {
 	private static ObjectDao objectDao = new ObjectDaoImpl();
 	private static PropertyUtil propertyUtil = new PropertyUtil(
 			"cons.properties");// 初始化参数配置文件
-	private static int HOME_PerPageRow;
-	private static int LOG_PerPageRow;
-	private static int PERSON_PerPageRow;
-	// private static int RecMoney;
-	// private static int PubMoney;
+	private static int HOME_PerPageRow;// 任务大厅每页显示任务数量
+	private static int LOG_PerPageRow;// 任务日志每页显示任务数量
+	private static int PERSON_PerPageRow;// 任务发布每页显示任务数量
 	private static double SUCCESS_TAX;// 成功服务费
 	private static double FALSE_TAX;// 失败服务费
+	private static int RuleReceive;// 每人限制任务数
+	// TODO 未实现发布接受规定任务数得奖励功能
+	// private static int RecMoney;
+	// private static int PubMoney;
 	static {
 		HOME_PerPageRow = Integer.parseInt(propertyUtil
-				.getPropertyValue("HOME_PerPageRow"));// 任务大厅每页显示任务数量
+				.getPropertyValue("HOME_PerPageRow"));
 		LOG_PerPageRow = Integer.parseInt(propertyUtil
-				.getPropertyValue("LOG_PerPageRow"));// 任务日志每页显示任务数量
+				.getPropertyValue("LOG_PerPageRow"));
 		PERSON_PerPageRow = Integer.parseInt(propertyUtil
-				.getPropertyValue("PERSON_PerPageRow"));// 任务日志每页显示任务数量
+				.getPropertyValue("PERSON_PerPageRow"));
+		RuleReceive = Integer.parseInt(propertyUtil
+				.getPropertyValue("RuleReceive"));
+		SUCCESS_TAX = Double.parseDouble(propertyUtil
+				.getPropertyValue("SUCCESS_TAX"));
+		FALSE_TAX = Double.parseDouble(propertyUtil
+				.getPropertyValue("FALSE_TAX"));
 		// RecMoney
 		// =Integer.parseInt(propertyUtil.getPropertyValue("RecMoney"));//接受任务数奖励
 		// PubMoney
 		// =Integer.parseInt(propertyUtil.getPropertyValue("PubMoney"));//发布任务数奖励
-		SUCCESS_TAX = Double.parseDouble(propertyUtil
-				.getPropertyValue("SUCCESS_TAX"));// 成功服务费
-		FALSE_TAX = Double.parseDouble(propertyUtil
-				.getPropertyValue("FALSE_TAX"));// 失败服务费
 	}
 
 	// 前台传入
@@ -80,6 +84,8 @@ public class TaskAction {
 	public String code;
 
 	public static JSONObject json = new JSONObject();
+
+	public String pushPoint;
 
 	/** 获取Dao */
 	public ObjectDao giveDao() {
@@ -131,8 +137,8 @@ public class TaskAction {
 					.getAttribute("ImgPath");
 			if (str != null) {
 				task.setTasImg(str.toString());
-				ServletActionContext.getRequest().getSession().setAttribute(
-						"ImgPath", null);
+				ServletActionContext.getRequest().getSession()
+						.setAttribute("ImgPath", null);
 			}
 			if (tasType.equals("加急个人")) {// 加急个人任务
 				task.setTasTimeout(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
@@ -250,6 +256,7 @@ public class TaskAction {
 				giveDao().update(user);
 				giveDao().save(task);
 				setCode("1");
+
 			} catch (Exception e) {
 				setCode("0");
 			}
@@ -270,16 +277,28 @@ public class TaskAction {
 		Users user = object1 != null ? (Users) object1 : null;
 
 		if (task != null && user != null) {
-			if (user.getUseAlipay().equals("") || user.getUseAlipay() == null) {
+
+			if (user.getUseAlipay().equals("") || user.getUseAlipay() == null) {// 先完善支付宝账户
 				setCode("21");
 				return "success";
 			}
+
 			for (Apply apply : task.getTasApplies()) {
 				if (apply.getAppBeUser().getUseId().intValue() == user
 						.getUseId().intValue()) {// 已申请,不必重复申请
 					setCode("19");
 					return "success";
 				}
+			}
+
+			// 申请与进行的任务已达到上限
+			String cond = "where appBeUser=" + user.getUseId()
+					+ " and appState in(0,1) order by appId desc";
+			int size = giveDao().getObjectSizeBycond(
+					"select count(*) from Apply " + cond);
+			if (size > RuleReceive) {
+				setCode("24");// 申请+进行任务数已达上限
+				return "success";
 			}
 			// 记录tag
 			List<?> list = giveDao().getObjectListByfield("Tag", "tagUser",
@@ -600,8 +619,8 @@ public class TaskAction {
 							"yyyy-MM-dd HH:mm:ss").format(new Date()));
 					task.setTasState(3);// 提交审核
 					giveDao().update(task);
-					PhoneCodeTool.send(task.getTasUser().getUsePhone(), task
-							.getTasTitle(), "task");// 短信提示发布者任务已完成
+					PhoneCodeTool.send(task.getTasUser().getUsePhone(),
+							task.getTasTitle(), "task");// 短信提示发布者任务已完成
 					setCode("1");// 操作成功
 					return "success";
 				}
@@ -630,8 +649,8 @@ public class TaskAction {
 					task.setTasFinishnum(task.getTasRulenum());
 					task.setTasState(3);// 提交审核
 					giveDao().update(task);
-					PhoneCodeTool.send(task.getTasUser().getUsePhone(), task
-							.getTasTitle(), "task");// 短信提示发布者任务已完成
+					PhoneCodeTool.send(task.getTasUser().getUsePhone(),
+							task.getTasTitle(), "task");// 短信提示发布者任务已完成
 					setCode("1");// 操作成功
 					return "success";
 				} else {// 任务人数未达齐
@@ -704,11 +723,10 @@ public class TaskAction {
 						money.setMonAlipay(user.getUseAlipay());
 						money.setMonComment("/");
 						money.setMonName(user.getUseName());
-						money
-								.setMonNo(new SimpleDateFormat(
-										"yyyyMMddHHmmssSSS").format(new Date())
-										+ user.getUseSno().substring(
-												user.getUseSno().length() - 4));
+						money.setMonNo(new SimpleDateFormat("yyyyMMddHHmmssSSS")
+								.format(new Date())
+								+ user.getUseSno().substring(
+										user.getUseSno().length() - 4));
 						money.setMonPay(task.getTasPrice() * (1 - SUCCESS_TAX)
 								/ set.size());
 						money.setMonState(3);// 打钱（不显示）
@@ -915,7 +933,6 @@ public class TaskAction {
 
 	// 根据发布类型获取经过发布时间倒序排序的所有任务(任务大厅分页)
 	public String giveTaskByType() {
-
 		json = new JSONObject();
 
 		List<?> list = giveDao().pageListWithCond(
@@ -945,7 +962,6 @@ public class TaskAction {
 							+ "' and  tasState in (0,1)");
 			json.put("size", size);
 		}
-
 		return "success";
 	}
 
@@ -1001,15 +1017,8 @@ public class TaskAction {
 
 		json = new JSONObject();
 
-		String cond = "where appBeUser=" + userId;
-		if (tasState.equals("0"))// 显示失败和申请不通过任务
-			cond += " and appState in (2,4)" + " order by appId desc";
-		if (tasState.equals("1"))// 显示成功任务
-			cond += " and appState=3" + " order by appId desc";
-		if (tasState.equals("2"))// 显示申请通过和审核中的任务
-			cond += " and appState in (1,5)" + " order by appId desc";
-		if (tasState.equals("3"))// 显示申请中任务
-			cond += " and appState=0" + " order by appId desc";
+		String cond = "where appBeUser=" + userId + " and appState=" + tasState
+				+ " order by appId desc";
 
 		List<?> list = giveDao().pageListWithCond("Apply", curPage,
 				LOG_PerPageRow, cond);
@@ -1047,15 +1056,8 @@ public class TaskAction {
 
 		json = new JSONObject();
 
-		String cond = "where tasUser=" + userId;
-		if (tasState.equals("0"))// 显示失败任务
-			cond += " and tasState=5" + " order by tasTime desc";
-		if (tasState.equals("1"))// 显示成功任务
-			cond += " and tasState=4" + " order by tasTime desc";
-		if (tasState.equals("2"))// 显示已发布、审核中、进行中和失效任务
-			cond += " and tasState in (0,2,3,6)" + " order by tasTime desc";
-		if (tasState.equals("3"))// 显示申请中任务
-			cond += " and tasState=1" + " order by tasTime desc";
+		String cond = "where tasUser=" + userId + " and tasState=" + tasState
+				+ " order by tasId desc";
 
 		List<?> list = giveDao().pageListWithCond("Task", curPage,
 				PERSON_PerPageRow, cond);
@@ -1213,6 +1215,10 @@ public class TaskAction {
 
 	public void setPayType(Integer payType) {
 		this.payType = payType;
+	}
+
+	public void setPushPoint(String pushPoint) {
+		this.pushPoint = pushPoint;
 	}
 
 }

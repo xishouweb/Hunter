@@ -3,7 +3,7 @@
     	xsi:noNamespaceSchemaLocation="http://ehcache.org/ehcache.xsd">  
     	
     <!--缓存到硬盘的路径-->
-    <diskStore path="d:/ehcache"></diskStore>
+    <diskStore path="c:/ehcache"></diskStore>
     
     <!-- 默认设置
         maxElementsInMemory : 在內存中最大緩存的对象数量。

@@ -16,7 +16,6 @@ import net.navagraha.hunter.pojo.Census;
 import net.navagraha.hunter.pojo.Money;
 import net.navagraha.hunter.pojo.Pay;
 import net.navagraha.hunter.pojo.Power;
-import net.navagraha.hunter.pojo.Tag;
 import net.navagraha.hunter.pojo.Task;
 import net.navagraha.hunter.pojo.Users;
 import net.navagraha.hunter.server.ObjectDao;
@@ -73,35 +72,36 @@ class MyRunable implements Runnable {
 		}
 	}
 
-	// 每天获取活跃用户前三名进行奖励，并且统计当天激活总人数和登录总人数
+	// 每天统计当天激活总人数和登录总人数
 	private void do4User() {
-		String ruleTime = "23:59";// 在凌晨进行统计，活跃前三进行奖励发送
+		String ruleTime = "23:59";// 在凌晨进行统计
 		String sysTime = new SimpleDateFormat("HH:mm").format(new Date());
 		if (ruleTime.equals(sysTime)) {
-			/** 获取前三进行处理 */
-			List<?> list = giveDao().getSomeObjectListBycond(
-					"from Tag order by tagTimeout desc", 3);
-			for (Object object : list) {
-				Tag tag = (Tag) object;
-				Users user = tag.getTagUser();
-				// 发放奖励
-				Money money = new Money();
-				money.setMonAlipay(user.getUseAlipay());
-				money.setMonComment("/");
-				money.setMonName(user.getUseName());
-				money.setMonNo(new SimpleDateFormat("yyyyMMddHHmmssSSS")
-						.format(new Date())
-						+ user.getUseSno().substring(
-								user.getUseSno().length() - 4));
-				money.setMonPay(50.0);
-				money.setMonPhone(user.getUsePhone());
-				money.setMonState(0);// 提现
-				money.setMonType("【内测活动】在线时长前三名");
-				money.setMonTime(new SimpleDateFormat("yyyy-MM-dd")
-						.format(new Date()));
-				giveDao().save(money);
-			}
-			/** 处理结束 */
+
+			// /** 获取活跃用户前三名进行奖励 */
+			// List<?> list = giveDao().getSomeObjectListBycond(
+			// "from Tag order by tagTimeout desc", 3);
+			// for (Object object : list) {
+			// Tag tag = (Tag) object;
+			// Users user = tag.getTagUser();
+			// // 发放奖励
+			// Money money = new Money();
+			// money.setMonAlipay(user.getUseAlipay());
+			// money.setMonComment("/");
+			// money.setMonName(user.getUseName());
+			// money.setMonNo(new SimpleDateFormat("yyyyMMddHHmmssSSS")
+			// .format(new Date())
+			// + user.getUseSno().substring(
+			// user.getUseSno().length() - 4));
+			// money.setMonPay(50.0);
+			// money.setMonPhone(user.getUsePhone());
+			// money.setMonState(0);// 提现
+			// money.setMonType("【内测活动】在线时长前三名");
+			// money.setMonTime(new SimpleDateFormat("yyyy-MM-dd")
+			// .format(new Date()));
+			// giveDao().save(money);
+			// }
+			// /** 奖励结束 */
 
 			/** 设置当天统计 */
 			// 统计当天激活人数
@@ -301,11 +301,10 @@ class MyRunable implements Runnable {
 						money.setMonAlipay(user.getUseAlipay());
 						money.setMonComment("/");
 						money.setMonName(user.getUseName());
-						money
-								.setMonNo(new SimpleDateFormat(
-										"yyyyMMddHHmmssSSS").format(new Date())
-										+ user.getUseSno().substring(
-												user.getUseSno().length() - 4));
+						money.setMonNo(new SimpleDateFormat("yyyyMMddHHmmssSSS")
+								.format(new Date())
+								+ user.getUseSno().substring(
+										user.getUseSno().length() - 4));
 						money.setMonPay(task.getTasPrice() * (1 - SUCCESS_TAX)
 								/ set.size());
 						money.setMonState(3);// 打钱（不显示）

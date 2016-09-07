@@ -348,6 +348,7 @@ public class ObjectDaoImpl implements ObjectDao {
 			tran.commit();
 			return list;
 		} catch (Exception e) {
+			// e.printStackTrace();
 			return new ArrayList<Object>();
 		} finally {
 			if (session.isOpen())

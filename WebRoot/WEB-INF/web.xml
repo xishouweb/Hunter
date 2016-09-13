@@ -16,7 +16,7 @@
    <!-- 该过滤器用于编码处理并测试后台是否获取参数，投入使用时可去掉-->
    <filter>
 		<filter-name>CharsetFilter</filter-name>
-		<filter-class>net.navagraha.hunter.tool.ShowParamFilter</filter-class>
+		<filter-class>net.navagraha.hunter.tool.CharacterFilterTool</filter-class>
 		<init-param>  
 	        <param-name>encoding</param-name>  
 	        <param-value>UTF-8</param-value>  

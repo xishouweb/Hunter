@@ -43,13 +43,14 @@ public class PayAction {
 	// 获取支付日志
 	public String givePayList() {
 
+		json = new JSONObject();
+
 		// 获取本用户ID
 		Object obj = ServletActionContext.getRequest().getSession()
 				.getAttribute("Users");// 将登陆用户取出
 		Users user = obj != null ? (Users) obj : null;
 		int userId = user != null ? user.getUseId() : 0;// 如为0，则反馈到前台的json为空，即获取失败
 
-		json = new JSONObject();
 		List<?> list = giveDao().pageListWithCond("Pay", curPage,
 				PAY_PerPageRow,
 				"where payUser=" + userId + " order by payTime desc");

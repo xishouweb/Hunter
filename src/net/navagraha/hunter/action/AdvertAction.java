@@ -24,7 +24,7 @@ public class AdvertAction implements java.io.Serializable {
 
 	public String code;
 
-	public static JSONObject json = new JSONObject();
+	public static JSONObject json;
 
 	/** 获取Dao */
 	public ObjectDao giveDao() {
@@ -35,6 +35,8 @@ public class AdvertAction implements java.io.Serializable {
 
 	// 获取第一轮播广告列表
 	public String giveAdvert1() {
+
+		json = new JSONObject();
 
 		List<?> list = giveDao().pageListWithCond("Advert", 0, PerPageRow,
 				"order by advHotlevel");
@@ -52,6 +54,8 @@ public class AdvertAction implements java.io.Serializable {
 	// 获取第二轮播广告列表
 	public String giveAdvert2() {
 
+		json = new JSONObject();
+
 		List<?> list = giveDao().pageListWithCond("Advert", PerPageRow + 1,
 				PerPageRow * 2, "order by advHotlevel");
 		if (list.size() == PerPageRow) {
@@ -67,6 +71,8 @@ public class AdvertAction implements java.io.Serializable {
 
 	// 获取第三轮播广告列表
 	public String giveAdvert3() {
+
+		json = new JSONObject();
 
 		List<?> list = giveDao().pageListWithCond("Advert", PerPageRow * 2 + 1,
 				PerPageRow * 3, "order by advHotlevel");

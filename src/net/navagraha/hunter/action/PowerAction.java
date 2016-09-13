@@ -25,10 +25,13 @@ public class PowerAction {
 	}
 
 	// 反馈到前台
-	public JSONObject json = new JSONObject();
+	public JSONObject json;
 
 	// 获取能力值
 	public String givePower() {
+
+		json = new JSONObject();
+
 		// 获取本用户ID
 		Object obj = ServletActionContext.getRequest().getSession()
 				.getAttribute("Users");// 将登陆用户取出
@@ -50,8 +53,7 @@ public class PowerAction {
 		}
 		json.put("PowerList", power);
 		int credit = Integer.parseInt(((JSONObject) json.get("PowerList"))
-				.get("powCredit")
-				+ "");
+				.get("powCredit") + "");
 		((JSONObject) json.get("PowerList")).put("powLevel", getLevel(credit));
 		((JSONObject) json.get("PowerList")).remove("powUser");
 		return "success";
@@ -60,6 +62,8 @@ public class PowerAction {
 	// 通过用户Id获取能力值
 	public String givePowerByUseId() {
 
+		json = new JSONObject();
+
 		List<?> list = giveDao().getObjectListBycond("Power",
 				"where powUser=" + useId);
 		Power power = list.size() > 0 ? (Power) list.get(0) : null;
@@ -67,8 +71,7 @@ public class PowerAction {
 		if (power != null) {
 			json.put("PowerList", power);
 			int credit = Integer.parseInt(((JSONObject) json.get("PowerList"))
-					.get("powCredit")
-					+ "");
+					.get("powCredit") + "");
 			((JSONObject) json.get("PowerList")).put("powLevel",
 					getLevel(credit));
 			((JSONObject) json.get("PowerList")).remove("powUser");
@@ -101,7 +104,7 @@ public class PowerAction {
 	 *            信誉值
 	 * @return 段位
 	 */
-	private static String getLevel(int credit) {
+	public static String getLevel(int credit) {
 		int begin = 0, count = 1, index = 0, diff = 3;
 
 		for (; diff < 3 + 5 * ((0 + 2) / 2 + (1 + 2) / 2 + (2 + 2) / 2

@@ -24,6 +24,8 @@ public class Task implements java.io.Serializable {
 	private Integer tasFinishnum;
 	private String tasEvaluate;
 	private Integer tasCredit;
+	private Integer appId;
+	private String state;
 	private Set<Apply> tasApplies = new HashSet<Apply>(0);
 
 	// Property accessors
@@ -170,6 +172,36 @@ public class Task implements java.io.Serializable {
 
 	public Integer getTasCredit() {
 		return tasCredit;
+	}
+
+	/**
+	 * @return the appId
+	 */
+	public Integer getAppId() {
+		return appId;
+	}
+
+	/**
+	 * @param appId
+	 *            the appId to set
+	 */
+	public void setAppId(Integer appId) {
+		this.appId = appId;
+	}
+
+	/**
+	 * @return the state
+	 */
+	public String getState() {
+		return state;
+	}
+
+	/**
+	 * @param state
+	 *            the state to set
+	 */
+	public void setState(String state) {
+		this.state = state;
 	}
 
 }

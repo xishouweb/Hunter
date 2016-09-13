@@ -19,6 +19,7 @@ import net.navagraha.hunter.pojo.Task;
 import net.navagraha.hunter.pojo.Users;
 import net.navagraha.hunter.server.ObjectDao;
 import net.navagraha.hunter.server.impl.ObjectDaoImpl;
+import net.navagraha.hunter.tool.JoinPushTool;
 import net.navagraha.hunter.tool.PhoneCodeTool;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
@@ -53,6 +54,7 @@ public class TaskAction {
 	// TODO 未实现发布接受规定任务数得奖励功能
 	// private static int RecMoney;
 	// private static int PubMoney;
+
 	static {
 		HOME_PerPageRow = Integer.parseInt(propertyUtil
 				.getPropertyValue("HOME_PerPageRow"));
@@ -75,16 +77,11 @@ public class TaskAction {
 	// 前台传入
 	private Integer curPage;
 	private Integer appId;
-	private Integer payType;
-
 	private String appReason;
 
 	// 反馈到前台
-
 	public String code;
-
 	public static JSONObject json = new JSONObject();
-
 	public String pushPoint;
 
 	/** 获取Dao */
@@ -141,12 +138,13 @@ public class TaskAction {
 						.setAttribute("ImgPath", null);
 			}
 			if (tasType.equals("加急个人")) {// 加急个人任务
+				tasTimeout = tasTimeout.split(":")[0].length() < 2 ? "0"
+						+ tasTimeout : tasTimeout;
 				task.setTasTimeout(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
-						.format(date).substring(
-								0,
-								new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
-										.format(date).indexOf(" "))
-						+ " " + tasTimeout + ":00");
+						.format(date).substring(0, 10)
+						+ " "
+						+ tasTimeout
+						+ ":00");
 			}
 			if (tasType.equals("个人")) {// 个人任务
 				date.setHours(date.getHours() + 48);// 默认显示2天
@@ -171,64 +169,6 @@ public class TaskAction {
 			try {
 				user.setUsePublishnum(user.getUsePublishnum() + 1);
 
-				// /** 达到发布数量打钱 */
-				// if (user.getUsePublishnum() % PubMoney == 0) {//
-				// 用户发布任务每达到规定数，进行奖励
-				//
-				// Money money = new Money();
-				// money.setMonAlipay(user.getUseAlipay());
-				// money.setMonComment("用户发布任务数达到规定数，进行奖励");
-				// money.setMonName(user.getUseName());
-				// money.setMonNo(new SimpleDateFormat("yyyyMMddHHmmssSSS")
-				// .format(new Date())
-				// + user.getUseSno().substring(
-				// user.getUseSno().length() - 4));
-				// money.setMonPhone(user.getUsePhone());
-				// money.setMonState(0);// 未打钱
-				// money.setMonType("特殊任务");// 平台奖励属于特殊
-				// money.setMonTime(new SimpleDateFormat("yyyy-MM-dd")
-				// .format(new Date()));
-				// money.setMonPay(0.0);
-				//
-				// if (PowerAction.givePowerByUseId(user.getUseId())
-				// .substring(0, 2).equals("青铜")) {
-				// user.setUseRemain(user.getUseRemain() + 1.0);
-				// money.setMonPay(money.getMonPay() + 1.0);
-				// }
-				// if (PowerAction.givePowerByUseId(user.getUseId())
-				// .substring(0, 2).equals("白银")) {
-				// user.setUseRemain(user.getUseRemain() + 2.0);
-				// money.setMonPay(money.getMonPay() + 2.0);
-				// }
-				// if (PowerAction.givePowerByUseId(user.getUseId())
-				// .substring(0, 2).equals("黄金")) {
-				// user.setUseRemain(user.getUseRemain() + 3.0);
-				// money.setMonPay(money.getMonPay() + 3.0);
-				// }
-				// if (PowerAction.givePowerByUseId(user.getUseId())
-				// .substring(0, 2).equals("铂金")) {
-				// user.setUseRemain(user.getUseRemain() + 4.0);
-				// money.setMonPay(money.getMonPay() + 4.0);
-				// }
-				// if (PowerAction.givePowerByUseId(user.getUseId())
-				// .substring(0, 2).equals("钻石")) {
-				// user.setUseRemain(user.getUseRemain() + 5.0);
-				// money.setMonPay(money.getMonPay() + 5.0);
-				// }
-				// if (PowerAction.givePowerByUseId(user.getUseId())
-				// .substring(0, 2).equals("超凡")) {
-				// user.setUseRemain(user.getUseRemain() + 6.0);
-				// money.setMonPay(money.getMonPay() + 6.0);
-				// }
-				// if (PowerAction.givePowerByUseId(user.getUseId())
-				// .substring(0, 2).equals("王者")) {
-				// user.setUseRemain(user.getUseRemain() + 7.0);
-				// money.setMonPay(money.getMonPay() + 7.0);
-				// }
-				// giveDao().saveOrUpdate(money);
-				// }
-				// /** 打钱结束 */
-
 				/** 发钱记录 */
 				Money money = new Money();
 				money.setMonAlipay(user.getUseAlipay());
@@ -244,20 +184,23 @@ public class TaskAction {
 				money.setMonComment("/");
 				money.setMonTime(new SimpleDateFormat("yyyy-MM-dd")
 						.format(new Date()));
-				if (payType == 0) {
-					user.setUseRemain(user.getUseRemain() - tasPrice);// 设置余额
-					money.setMonType("【任务发布】悬赏金(平台余额支付)");
-				} else
-					money.setMonType("【任务发布】悬赏金(支付宝支付)");
+				// if (payType != null && payType == 0) {// 余额支付
+				// user.setUseRemain(user.getUseRemain() - tasPrice);// 设置余额
+				// money.setMonType("【任务发布】悬赏金(平台余额支付)");
+				// } else
+				money.setMonType("【任务发布】悬赏金(支付宝支付)");
 				giveDao().save(money);
 				/** 发钱记录结束 */
 
 				task.setTasUser(user);
 				giveDao().update(user);
+				ServletActionContext.getRequest().getSession()
+						.setAttribute("Users", user);// 将更新用户存入session
 				giveDao().save(task);
 				setCode("1");
 
 			} catch (Exception e) {
+				e.printStackTrace();
 				setCode("0");
 			}
 		} else
@@ -300,10 +243,12 @@ public class TaskAction {
 				setCode("24");// 申请+进行任务数已达上限
 				return "success";
 			}
+
 			// 记录tag
 			List<?> list = giveDao().getObjectListByfield("Tag", "tagUser",
 					user);
 			Tag tag = list.size() > 0 ? (Tag) list.get(0) : null;
+
 			if (tag != null) {
 				// 设置接收任务性别
 				String strs[] = tag.getTagSex().split(",");
@@ -348,6 +293,19 @@ public class TaskAction {
 					task.setTasApplies(set);
 					giveDao().update(task);
 					setCode("1");
+
+					// 消息推送接受者
+					String phone = apply.getAppBeUser().getUsePhone();
+					if (JoinPushTool.connections.containsKey(phone))
+						JoinPushTool
+								.broadcast("12" + task.getTasTitle(), phone);
+
+					// 消息推送发布者
+					phone = task.getTasUser().getUsePhone();
+					if (JoinPushTool.connections.containsKey(phone))
+						JoinPushTool
+								.broadcast("01" + task.getTasTitle(), phone);
+
 					return "success";
 				} else {
 					setCode("10");// 任务不可接
@@ -363,6 +321,19 @@ public class TaskAction {
 					task.setTasState(1);// 任务申请中
 					giveDao().update(task);
 					setCode("1");
+
+					// 消息推送接受者
+					String phone = apply.getAppBeUser().getUsePhone();
+					if (JoinPushTool.connections.containsKey(phone))
+						JoinPushTool
+								.broadcast("10" + task.getTasTitle(), phone);
+
+					// 消息推送发布者
+					phone = task.getTasUser().getUsePhone();
+					if (JoinPushTool.connections.containsKey(phone))
+						JoinPushTool
+								.broadcast("00" + task.getTasTitle(), phone);
+
 					return "success";
 				} else {
 					setCode("10");// 任务不可接
@@ -377,8 +348,10 @@ public class TaskAction {
 
 	// 取消申请任务(仅限申请中任务，即appState=0)
 	public String backReceiveTask() {
+
 		Object object = giveDao().getObjectById(Apply.class, appId);
 		Apply apply = object != null ? (Apply) object : null;
+		System.out.println(appId);
 		if (apply != null && apply.getAppState() == 0) {
 			giveDao().delete(apply);
 			setCode("1");// 操作成功
@@ -389,14 +362,71 @@ public class TaskAction {
 
 	}
 
-	// 取消发布任务（仅限发布和申请状态的任务，即tasState=0,1,注：传入的任务应该tasState=0,1,2）
+	// 取消发布任务（仅限发布的任务，即tasState=0,注：传入的任务应该tasState=0,1,2）
 	public String backTask() {
-		Object object = giveDao().getObjectById(Apply.class, tasId);
+		Object object = giveDao().getObjectById(Task.class, tasId);
 		Task task = object != null ? (Task) object : null;
-		if (task != null && task.getTasState() != 2) {
-			task.setTasTimeout(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
-					.format(new Date()));// 设置任务立即过期，使用initServerTool方法自动检测过期任务以返款，并将任务设为失败
+
+		if (task != null && task.getTasState() == 0) {
+
+			task.setTasState(5);// 任务失败
+			task.setTasEvaluate("用户撤销任务，导致任务失败");
 			giveDao().update(task);
+
+			Users user = task.getTasUser();
+			user.setUseRemain(user.getUseRemain() + task.getTasPrice()
+					* (1 - FALSE_TAX));// 存入余额
+			giveDao().update(user);
+			ServletActionContext.getRequest().getSession()
+					.setAttribute("Users", user);// 将更新用户存入session
+
+			/** 返钱记录 */
+			Money money = new Money();
+			money.setMonAlipay(user.getUseAlipay());
+			money.setMonComment("/");
+			money.setMonName(user.getUseName());
+			money.setMonNo(new SimpleDateFormat("yyyyMMddHHmmssSSS")
+					.format(new Date())
+					+ user.getUseSno().substring(user.getUseSno().length() - 4));
+			money.setMonPay(task.getTasPrice() * (1 - FALSE_TAX));
+			money.setMonState(3);// 打钱（不显示）
+			money.setMonPhone(user.getUsePhone());
+			money.setMonType("【撤销任务】返金");
+			money.setMonTime(new SimpleDateFormat("yyyy-MM-dd")
+					.format(new Date()));
+			giveDao().save(money);
+			/** 返钱记录结束 */
+
+			/** 支付日志 **/
+			SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM");
+			Pay payOut;
+
+			// 获取任务发布者的pay
+			List<?> list1 = giveDao().getObjectListByfield("Pay",
+					new String[] { "payTime", "payUser" },
+					new Object[] { sdf.format(new Date()), user });
+
+			if (list1.size() > 0) {
+				// 支出
+				payOut = (Pay) list1.get(0);
+				payOut.setPayOut(payOut.getPayOut() + task.getTasPrice()
+						* FALSE_TAX);
+			} else {
+				// 支出
+				payOut = new Pay();
+				payOut.setPayTime(sdf.format(new Date()));
+				payOut.setPayIn(0.0);
+				payOut.setPayOut(task.getTasPrice() * FALSE_TAX);
+				payOut.setPayUser(task.getTasUser());
+			}
+			giveDao().saveOrUpdate(payOut);
+			/** 支付日志结束 **/
+
+			// 消息推送发布者
+			String phone = task.getTasUser().getUsePhone();
+			if (JoinPushTool.connections.containsKey(phone))
+				JoinPushTool.broadcast("04" + task.getTasTitle(), phone);
+
 			setCode("1");// 操作成功
 		} else
 			setCode("22");// 任务已过发布和申请状态，不能撤销
@@ -406,6 +436,10 @@ public class TaskAction {
 
 	// 用户审核通过申请(非加急)
 	public String checkSuccessTask() {
+		if (appId == null) {
+			setCode("13");// 申请不存在
+			return "success";
+		}
 		Object object = giveDao().getObjectById(Apply.class, appId);
 		Apply apply = object != null ? (Apply) object : null;
 
@@ -413,107 +447,43 @@ public class TaskAction {
 			Task task = apply.getAppTask();
 			if (task != null && task.getTasState() == 1) {
 
-				if (!task.getTasType().equals("团队")) {
-					// 其他申请自动设置为不通过
-					List<?> tasList = giveDao().getObjectListByfield("Apply",
-							"appTask", task);
-					for (Object object2 : tasList) {
-						Apply apply2 = (Apply) object2;
-						if (apply2.getAppId() != appId) {
-							apply2.setAppState(2);// 不通过
-							giveDao().update(apply2);
-						}
-					}
-				}
-
 				// 本申请通过
 				Users user = apply.getAppBeUser();
 				user.setUseAcceptnum(user.getUseAcceptnum() + 1);
-				PhoneCodeTool.send(user.getUsePhone(), task.getTasTitle(),
-						"apply");
-
-				// /** 打钱 */
-				// Money money;
-				// if (user.getUseAcceptnum() % RecMoney == 0) {//
-				// 用户接受任务每达到规定数，进行奖励
-				//
-				// List<?> list = objectDao.getObjectListBycond("Money",
-				// "where monAlipay='" + user.getUseAlipay()
-				// + "' and monState in(0,2)");//
-				// 如果存在记录且是需要打款的，直接进行金额累计，否则新建一个打款记录
-				// if (list.size() > 0) {
-				// money = (Money) list.get(0);
-				// money.setMonComment("综合打款");
-				// if (task.getTasUser().getUseIscompany() == 1) {
-				// if (!money.getMonType().equals("特殊任务"))
-				// money.setMonType("多类任务综合");
-				// else
-				// money.setMonType("特殊任务综合");
-				// } else {
-				// if (!money.getMonType().equals(task.getTasType()))
-				// money.setMonType("多类任务综合");
-				// else
-				// money.setMonType(money.getMonType() + "综合");
-				// }
-				// } else {
-				// money = new Money();
-				// money.setMonAlipay(user.getUseAlipay());
-				// money.setMonComment("用户接受任务数达到规定数，进行奖励");
-				// money.setMonName(user.getUseName());
-				// money
-				// .setMonNo(new SimpleDateFormat(
-				// "yyyyMMddHHmmssSSS").format(new Date())
-				// + user.getUseSno().substring(
-				// user.getUseSno().length() - 4));
-				// money.setMonPhone(user.getUsePhone());
-				// money.setMonState(0);// 未打钱
-				// money.setMonType("特殊任务");// 平台奖励属于特殊
-				// money.setMonTime(new SimpleDateFormat("yyyy-MM-dd")
-				// .format(new Date()));
-				// money.setMonPay(0.0);
-				// }
-				// if (PowerAction.givePowerByUseId(user.getUseId())
-				// .substring(0, 2).equals("青铜")) {
-				// user.setUseRemain(user.getUseRemain() + 1.0);
-				// money.setMonPay(money.getMonPay() + 1.0);
-				// }
-				// if (PowerAction.givePowerByUseId(user.getUseId())
-				// .substring(0, 2).equals("白银")) {
-				// user.setUseRemain(user.getUseRemain() + 2.0);
-				// money.setMonPay(money.getMonPay() + 2.0);
-				// }
-				// if (PowerAction.givePowerByUseId(user.getUseId())
-				// .substring(0, 2).equals("黄金")) {
-				// user.setUseRemain(user.getUseRemain() + 3.0);
-				// money.setMonPay(money.getMonPay() + 3.0);
-				// }
-				// if (PowerAction.givePowerByUseId(user.getUseId())
-				// .substring(0, 2).equals("铂金")) {
-				// user.setUseRemain(user.getUseRemain() + 4.0);
-				// money.setMonPay(money.getMonPay() + 4.0);
-				// }
-				// if (PowerAction.givePowerByUseId(user.getUseId())
-				// .substring(0, 2).equals("钻石")) {
-				// user.setUseRemain(user.getUseRemain() + 5.0);
-				// money.setMonPay(money.getMonPay() + 5.0);
-				// }
-				// if (PowerAction.givePowerByUseId(user.getUseId())
-				// .substring(0, 2).equals("超凡")) {
-				// user.setUseRemain(user.getUseRemain() + 6.0);
-				// money.setMonPay(money.getMonPay() + 6.0);
-				// }
-				// if (PowerAction.givePowerByUseId(user.getUseId())
-				// .substring(0, 2).equals("王者")) {
-				// user.setUseRemain(user.getUseRemain() + 7.0);
-				// money.setMonPay(money.getMonPay() + 7.0);
-				// }
-				// giveDao().saveOrUpdate(money);
-				// }
-				// /** 打钱结束 */
-
 				giveDao().update(user);
+				ServletActionContext.getRequest().getSession()
+						.setAttribute("Users", user);// 将更新用户存入session
 
 				if (task.getTasType().equals("个人")) {// 个人任务
+
+					// 其他申请自动设置为不通过
+					List<?> appList = giveDao().getObjectListByfield("Apply",
+							"appTask", task);
+					for (Object object2 : appList) {
+						Apply apply2 = (Apply) object2;
+						if (apply2.getAppId().intValue() != appId) {// 不通过
+							apply2.setAppState(2);
+							giveDao().update(apply2);
+
+							// 不通过 消息推送接受者
+							String phone = apply2.getAppBeUser().getUsePhone();
+							if (JoinPushTool.connections.containsKey(phone))
+								JoinPushTool.broadcast(
+										"11" + task.getTasTitle(), phone);
+						} else {// 通过 消息推送接受者
+							if (!JoinPushTool.connections.containsKey(apply2
+									.getAppBeUser().getUsePhone())) // 用户不在线，发送短信
+								PhoneCodeTool.send(apply2.getAppBeUser()
+										.getUsePhone(), task.getTasTitle(),
+										"apply");
+							else {// 用户在线，消息推送通知
+								String phone = apply2.getAppBeUser()
+										.getUsePhone();
+								JoinPushTool.broadcast(
+										"12" + task.getTasTitle(), phone);
+							}
+						}
+					}
 
 					apply.setAppState(1);// 通过
 					giveDao().update(apply);
@@ -523,8 +493,14 @@ public class TaskAction {
 					set.add(apply);
 					task.setTasApplies(set);
 					giveDao().update(task);
-
 					setCode("1");// 操作成功
+
+					// 消息推送发布者
+					String phone = task.getTasUser().getUsePhone();
+					if (JoinPushTool.connections.containsKey(phone))
+						JoinPushTool
+								.broadcast("01" + task.getTasTitle(), phone);
+
 					return "success";
 				} else {// 团队任务
 					if (task.getTasReceivenum().intValue() == task
@@ -539,7 +515,54 @@ public class TaskAction {
 						task.setTasReceivenum(task.getTasReceivenum() + 1);
 						giveDao().update(task);
 
+						// 其他申请自动设置为不通过
+						List<?> appList = giveDao().getObjectListByfield(
+								"Apply", "appTask", task);
+						for (Object object2 : appList) {// 总申请
+							Apply apply2 = (Apply) object2;
+							boolean in = false;
+							for (Apply apply3 : set) {// 已通过的申请
+								if (apply2.getAppId().intValue() == apply3
+										.getAppId().intValue())
+									in = true;
+
+								if (!in) {// 不通过的
+									apply2.setAppState(2);
+									giveDao().update(apply2);
+
+									// 不通过 消息推送接受者
+									String phone = apply2.getAppBeUser()
+											.getUsePhone();
+									if (JoinPushTool.connections
+											.containsKey(phone))
+										JoinPushTool.broadcast(
+												"11" + task.getTasTitle(),
+												phone);
+								} else {// 通过的
+									if (!JoinPushTool.connections
+											.containsKey(apply2.getAppBeUser()
+													.getUsePhone())) // 用户不在线，发送短信
+										PhoneCodeTool.send(apply2
+												.getAppBeUser().getUsePhone(),
+												task.getTasTitle(), "apply");
+									else {// 用户在线，消息推送
+										String phone = apply2.getAppBeUser()
+												.getUsePhone();
+										JoinPushTool.broadcast(
+												"12" + task.getTasTitle(),
+												phone);
+									}
+								}
+							}
+						}
 						setCode("1");// 操作成功
+
+						// 消息推送发布者
+						String phone = task.getTasUser().getUsePhone();
+						if (JoinPushTool.connections.containsKey(phone))
+							JoinPushTool.broadcast("01" + task.getTasTitle(),
+									phone);
+
 						return "success";
 					} else if (task.getTasReceivenum().intValue() < task
 							.getTasRulenum().intValue() - 1) {// 任务人数未达齐
@@ -553,8 +576,14 @@ public class TaskAction {
 						task.setTasReceivenum(task.getTasReceivenum() + 1);
 						task.setTasApplies(set);
 						giveDao().update(task);
-
 						setCode("1");// 操作成功
+
+						// 消息推送接受者 任务未开始，只通知本申请的接受者
+						String phone = apply.getAppBeUser().getUsePhone();
+						if (JoinPushTool.connections.containsKey(phone))
+							JoinPushTool.broadcast("10" + task.getTasTitle(),
+									phone);
+
 						return "success";
 					} else {
 						setCode("12");// 规定人数已满
@@ -583,6 +612,12 @@ public class TaskAction {
 				apply.setAppState(2);
 				giveDao().update(apply);
 				setCode("1");
+
+				// 消息推送接受者
+				String phone = apply.getAppBeUser().getUsePhone();
+				if (JoinPushTool.connections.containsKey(phone))
+					JoinPushTool.broadcast("11" + task.getTasTitle(), phone);
+
 				return "success";
 			} else {
 				setCode("13");// 申请记录不存在
@@ -605,25 +640,53 @@ public class TaskAction {
 		Task task = object != null ? (Task) object : null;
 
 		if (task != null) {
-			if (!task.getTasType().equals("团队")) {
 
-				if (task.getTasState() == 5) {
-					setCode("15");// 任务已失败
-					return "success";
-				} else {
-					if (task.getTasState() == 3) {
-						setCode("14");// 已点击了申请完成，不必重新点击申请完成
-						return "success";
+			if (task.getTasState() == 5) {
+				setCode("15");// 任务已失败
+				return "success";
+			}
+			if (task.getTasState() == 3) {
+				setCode("14");// 已点击了申请完成，不必重新点击申请完成
+				return "success";
+			}
+
+			if (!task.getTasType().equals("团队")) {// 个人任务
+
+				for (Apply apply : task.getTasApplies()) {
+					if (apply.getAppBeUser().getUseId().intValue() == user
+							.getUseId().intValue()) {
+						if (apply.getAppState().intValue() == 5) {
+							setCode("14");// 已点击了申请完成，不必重新点击申请完成
+							return "success";
+						} else {
+							apply.setAppState(5);
+							objectDao.update(apply);// 设置该用户申请已提交（避免重复提交）
+							break;
+						}
+
 					}
-					task.setTasFinishtime(new SimpleDateFormat(
-							"yyyy-MM-dd HH:mm:ss").format(new Date()));
-					task.setTasState(3);// 提交审核
-					giveDao().update(task);
-					PhoneCodeTool.send(task.getTasUser().getUsePhone(),
-							task.getTasTitle(), "task");// 短信提示发布者任务已完成
-					setCode("1");// 操作成功
-					return "success";
 				}
+
+				task.setTasFinishtime(new SimpleDateFormat(
+						"yyyy-MM-dd HH:mm:ss").format(new Date()));
+				task.setTasState(3);// 提交审核
+				giveDao().update(task);
+				setCode("1");// 操作成功
+
+				// 消息推送接受者
+				String phone = user.getUsePhone();
+				if (JoinPushTool.connections.containsKey(phone))
+					JoinPushTool.broadcast("13" + task.getTasTitle(), phone);
+
+				// 消息推送发布者
+				phone = task.getTasUser().getUsePhone();
+				if (JoinPushTool.connections.containsKey(phone))
+					JoinPushTool.broadcast("02" + task.getTasTitle(), phone);
+				else
+					PhoneCodeTool.send(phone, task.getTasTitle(), "task");// 短信提示发布者任务已完成
+
+				return "success";
+
 			} else {// 团队任务
 
 				for (Apply apply : task.getTasApplies()) {
@@ -649,16 +712,30 @@ public class TaskAction {
 					task.setTasFinishnum(task.getTasRulenum());
 					task.setTasState(3);// 提交审核
 					giveDao().update(task);
-					PhoneCodeTool.send(task.getTasUser().getUsePhone(),
-							task.getTasTitle(), "task");// 短信提示发布者任务已完成
 					setCode("1");// 操作成功
+
+					// 消息推送发布者
+					String phone = task.getTasUser().getUsePhone();
+					if (JoinPushTool.connections.containsKey(phone))
+						JoinPushTool
+								.broadcast("02" + task.getTasTitle(), phone);
+					else
+						PhoneCodeTool.send(task.getTasUser().getUsePhone(),
+								task.getTasTitle(), "task");// 短信提示发布者任务已完成
+
 					return "success";
 				} else {// 任务人数未达齐
-
 					task.setTasFinishnum(task.getTasFinishnum() + 1);
 					task.setTasState(2);// 任务仍是进行中
 					giveDao().update(task);
 					setCode("1");// 操作成功
+
+					// 消息推送接受者 仅仅是该操作完成者
+					String phone = user.getUsePhone();
+					if (JoinPushTool.connections.containsKey(phone))
+						JoinPushTool
+								.broadcast("13" + task.getTasTitle(), phone);
+
 					return "success";
 				}
 			}
@@ -717,6 +794,8 @@ public class TaskAction {
 								+ task.getTasPrice() * (1 - SUCCESS_TAX)
 								/ set.size());// 存入余额
 						giveDao().update(user);
+						ServletActionContext.getRequest().getSession()
+								.setAttribute("Users", user);// 将更新用户存入session
 
 						/** 打钱记录 */
 						Money money = new Money();
@@ -804,16 +883,27 @@ public class TaskAction {
 						/** 支付日志结束 **/
 
 					}
+
+					// 消息推送接受者
+					String phone = apply.getAppBeUser().getUsePhone();
+					if (JoinPushTool.connections.containsKey(phone))
+						JoinPushTool
+								.broadcast("14" + task.getTasTitle(), phone);
 				}
 				task.setTasState(4);// 任务成功
 				task.setTasEvaluate(tasEvaluate);
 				task.setTasCredit(tasCredit);
 				giveDao().update(task);
-
 				setCode("1");// 操作成功
+
+				// 消息推送发布者
+				String phone = task.getTasUser().getUsePhone();
+				if (JoinPushTool.connections.containsKey(phone))
+					JoinPushTool.broadcast("03" + task.getTasTitle(), phone);
+
 				return "success";
 			} else {
-				setCode("16");// 接受者不存在
+				setCode("16");// 接受者们不存在
 				return "success";
 			}
 		} else {
@@ -857,8 +947,19 @@ public class TaskAction {
 						objectDao.saveOrUpdate(power);
 
 					}
+
+					// 消息推送接受者
+					String phone = apply.getAppBeUser().getUsePhone();
+					if (JoinPushTool.connections.containsKey(phone))
+						JoinPushTool
+								.broadcast("15" + task.getTasTitle(), phone);
 				}
 				/** 能力结束 **/
+
+				// 消息推送发布者
+				String phone = task.getTasUser().getUsePhone();
+				if (JoinPushTool.connections.containsKey(phone))
+					JoinPushTool.broadcast("04" + task.getTasTitle(), phone);
 
 				if (task.getTasState() == 6) {// 任务已失效，即失败
 					task.setTasState(5);// 任务失败
@@ -867,6 +968,8 @@ public class TaskAction {
 					user.setUseRemain(user.getUseRemain() + task.getTasPrice()
 							* (1 - FALSE_TAX));// 存入余额
 					giveDao().update(user);
+					ServletActionContext.getRequest().getSession()
+							.setAttribute("Users", user);// 将更新用户存入session
 
 					/** 返钱记录 */
 					Money money = new Money();
@@ -933,7 +1036,14 @@ public class TaskAction {
 
 	// 根据发布类型获取经过发布时间倒序排序的所有任务(任务大厅分页)
 	public String giveTaskByType() {
+
 		json = new JSONObject();
+
+		// 获取本用户ID
+		Object obj = ServletActionContext.getRequest().getSession()
+				.getAttribute("Users");// 将登陆用户取出
+		Users user = obj != null ? (Users) obj : null;
+		int userId = user != null ? user.getUseId() : 0;// 如为0，则反馈到前台的json为空，即获取失败
 
 		List<?> list = giveDao().pageListWithCond(
 				"Task",
@@ -943,6 +1053,23 @@ public class TaskAction {
 						+ "' and  tasState in (0,1) order by tasTime desc");
 		List<Task> taskList = new ArrayList<Task>();
 		for (Object object : list) {
+
+			Task task = (Task) object;
+			if (task.getTasUser().getUseId().intValue() == userId) // 任务发送者是自己
+				task.setState("2");
+
+			for (Apply apply : task.getTasApplies()) {
+
+				if (apply.getAppBeUser().getUseId().intValue() == userId) {// 该任务申请者有本人
+					task.setAppId(apply.getAppId());// 可不传
+					if (apply.getAppState() == 0)
+						task.setState("0");
+					if (apply.getAppState() == 1
+							&& apply.getAppTask().getTasState() == 1)
+						task.setState("1");// 通过申请，但任务需要人数未达齐，仍是申请中（团队任务）
+				}
+			}
+
 			taskList.add((Task) object);
 		}
 
@@ -1009,13 +1136,13 @@ public class TaskAction {
 	// 根据任务状态获取经过申请时间倒序排序的所有任务(任务日志分页-接受的任务)
 	public String giveBeTaskByState() {
 
+		json = new JSONObject();
+
 		// 获取本用户ID
 		Object obj = ServletActionContext.getRequest().getSession()
 				.getAttribute("Users");// 将登陆用户取出
 		Users user = obj != null ? (Users) obj : null;
 		int userId = user != null ? user.getUseId() : 0;// 如为0，则反馈到前台的json为空，即获取失败
-
-		json = new JSONObject();
 
 		String cond = "where appBeUser=" + userId + " and appState=" + tasState
 				+ " order by appId desc";
@@ -1024,7 +1151,16 @@ public class TaskAction {
 				LOG_PerPageRow, cond);
 		List<Task> taskList = new ArrayList<Task>();
 		for (Object object : list) {
-			taskList.add(((Apply) object).getAppTask());
+			Apply apply = ((Apply) object);
+			Task task = apply.getAppTask();
+			task.setAppId(apply.getAppId());
+			if (apply.getAppState() == 0)
+				task.setState("0");
+			if (apply.getAppState() == 1
+					&& apply.getAppTask().getTasState() == 1)
+				task.setState("1");// 通过申请，但任务需要人数未达齐，仍是申请中（团队任务）
+			taskList.add(task);
+
 		}
 
 		// 去掉json多余参数
@@ -1041,12 +1177,13 @@ public class TaskAction {
 					"select count(*) from Apply " + cond);
 			json.put("size", size);
 		}
-
 		return "success";
 	}
 
 	// 根据任务状态获取经过发布时间倒序排序的所有任务(个人任务分页-发布的任务)
 	public String giveTaskByState() {
+
+		json = new JSONObject();
 
 		// 获取本用户ID
 		Object obj = ServletActionContext.getRequest().getSession()
@@ -1054,10 +1191,13 @@ public class TaskAction {
 		Users user = obj != null ? (Users) obj : null;
 		int userId = user != null ? user.getUseId() : 0;// 如为0，则反馈到前台的json为空，即获取失败
 
-		json = new JSONObject();
-
-		String cond = "where tasUser=" + userId + " and tasState=" + tasState
-				+ " order by tasId desc";
+		String cond;
+		if (tasState.equals("2")) {
+			cond = "where tasUser=" + userId
+					+ " and tasState in(2,6) order by tasId desc";
+		} else
+			cond = "where tasUser=" + userId + " and tasState=" + tasState
+					+ " order by tasId desc";
 
 		List<?> list = giveDao().pageListWithCond("Task", curPage,
 				PERSON_PerPageRow, cond);
@@ -1086,6 +1226,7 @@ public class TaskAction {
 
 	// 根据任务Id获取相应的申请
 	public String giveApplyByTasId() {
+
 		json = new JSONObject();
 
 		Object object = giveDao().getObjectById(Task.class, tasId);
@@ -1105,7 +1246,8 @@ public class TaskAction {
 			json.put("ApplyList", jArray);
 		} else {// 任务为其他状态
 
-			String cond = "where appTask=" + tasId + " and appState in(1,3,4)";
+			String cond = "where appTask=" + tasId
+					+ " and appState in(1,3,4,5)";// 不能加入未通过的申请，因为，这样的申请是和任务没有半点关系的
 			List<?> list = giveDao().getObjectListBycond("Apply", cond);
 
 			JSONArray jArray = new JSONArray();
@@ -1117,24 +1259,13 @@ public class TaskAction {
 		return "success";
 	}
 
-	// 通过任务Id获取任务
-	public String giveTaskById() {
-
-		json = new JSONObject();
-
-		Object object = giveDao().getObjectById(Task.class, tasId);
-		Task task = object != null ? (Task) object : null;
-		if (task != null)
-			json.put("Task", task);
-		// 去掉json多余参数
-		((JSONObject) json.get("TaskList")).remove("tasApplies");
-
-		return "success";
-	}
-
 	// 通过任务获取任务发布者
 	public String giveTasUserByTasId() {
-		Object object = giveDao().getObjectById(Task.class, tasId);
+
+		json = new JSONObject();
+		// 由于前台需求，同时调用giveTasUserByTasId与giveApplyByTasId，因而出现session was
+		// closed现象，故，这里重新建立一个ObjectDaoImpl对象来解决并发问题
+		Object object = new ObjectDaoImpl().getObjectById(Task.class, tasId);
 		Task task = object != null ? (Task) object : null;
 		if (task != null) {
 			json = new JSONObject();
@@ -1143,7 +1274,36 @@ public class TaskAction {
 		return "success";
 	}
 
-	// Property accessors
+	// 通过任务Id获取任务
+	public String giveTaskById() {
+
+		json = new JSONObject();
+
+		Object object1 = ServletActionContext.getRequest().getSession()
+				.getAttribute("Users");// 将登陆用户取出
+		Users user = object1 != null ? (Users) object1 : null;
+
+		Object object = giveDao().getObjectById(Task.class, tasId);
+		Task task = object != null ? (Task) object : null;
+
+		if (task != null) {
+			json.put("Task", task);
+			for (Apply apply : task.getTasApplies()) {
+				if (apply.getAppBeUser().getUseId().intValue() == user
+						.getUseId().intValue()) {// 自己的申请
+					if (apply.getAppState() == 0)
+						json.put("State", "0");// 申请中
+					if (apply.getAppState() == 1
+							&& apply.getAppTask().getTasState() == 1)
+						json.put("State", "1");// 通过申请，但任务需要人数未达齐，仍是申请中（团队任务）
+					task.setAppId(apply.getAppId());
+				}
+			}
+			// 去掉json多余参数
+			((JSONObject) json.get("TaskList")).remove("tasApplies");
+		}
+		return "success";
+	}
 
 	public void setTasId(Integer tasId) {
 		this.tasId = tasId;
@@ -1211,10 +1371,6 @@ public class TaskAction {
 
 	public void setTasCredit(Integer tasCredit) {
 		this.tasCredit = tasCredit;
-	}
-
-	public void setPayType(Integer payType) {
-		this.payType = payType;
 	}
 
 	public void setPushPoint(String pushPoint) {

@@ -4,7 +4,6 @@
 
 <hibernate-mapping>
     <class name="net.navagraha.hunter.pojo.Users" table="users" catalog="hunter">
-        <cache usage="read-write"/>
         <id name="useId" type="java.lang.Integer">
             <column name="use_id" />
             <generator class="identity" />

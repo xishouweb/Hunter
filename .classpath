@@ -28,5 +28,6 @@
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry kind="con" path="com.genuitec.runtime.library/com.genuitec.generic_5.0"/>
 	<classpathentry kind="con" path="melibrary.com.genuitec.eclipse.j2eedt.core.MYECLIPSE_JAVAEE_5_CONTAINER"/>
+	<classpathentry kind="lib" path="D:/BigSoft/Myeclipse/Tomcat8.0.3/lib/websocket-api.jar"/>
 	<classpathentry kind="output" path="WebRoot/WEB-INF/classes"/>
 </classpath>

@@ -6,6 +6,7 @@ public class About implements java.io.Serializable {
 
 	private Integer aboId;
 	private String aboContent;
+	private String aboVersion;
 
 	// Property accessors
 
@@ -23,6 +24,14 @@ public class About implements java.io.Serializable {
 
 	public void setAboContent(String aboContent) {
 		this.aboContent = aboContent;
+	}
+
+	public String getAboVersion() {
+		return aboVersion;
+	}
+
+	public void setAboVersion(String aboVersion) {
+		this.aboVersion = aboVersion;
 	}
 
 }

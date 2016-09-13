@@ -1,6 +1,9 @@
 package net.navagraha.hunter.tool;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.net.URLEncoder;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -54,7 +57,15 @@ public class PhoneCodeTool {
 
 			client.executeMethod(post);
 
-			String result = post.getResponseBodyAsString();
+			// 读取post返回信息
+			InputStream is = post.getResponseBodyAsStream();
+			BufferedReader br = new BufferedReader(new InputStreamReader(is));
+			StringBuffer sb = new StringBuffer();
+			String str;
+			while ((str = br.readLine()) != null)
+				sb.append(str);
+
+			String result = sb.toString();// / post.getResponseBodyAsString()
 			if (result.length() > 3)
 				return true;
 		} catch (HttpException e) {

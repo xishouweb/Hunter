@@ -23,7 +23,6 @@ import org.apache.struts2.ServletActionContext;
 public class UserAction {
 
 	// Fields
-
 	private Integer useId;
 	private String useSno;
 	private String useNickname;
@@ -34,23 +33,21 @@ public class UserAction {
 	private String useCollege;
 	private String useMajor;
 	private String useEmei;
+	private String useSign;
+	private Integer useAge;
+	private String useAlipay;
 
 	// 前台传入
-
 	private String newUsepassword;
 	private String phoneCode;
 	private String useCond;
-	private String useSign;
-	private String useAlipay;
 	private String mode;
 	private int tasId;
 	private double payNum;
 
 	// 反馈到前台
-
 	private String code;
-	public static JSONObject json = new JSONObject();
-
+	public static JSONObject json;
 	private static ObjectDao objectDao = new ObjectDaoImpl();
 
 	/** 获取Dao */
@@ -94,14 +91,19 @@ public class UserAction {
 		return "success";
 	}
 
-	// #用户登录
+	// 用户登录
 	public String login() {
+
 		List<?> list1 = giveDao().getObjectListByfield("Users", "usePhone",
 				usePhone);
+
 		if (list1.size() > 0) {
+
 			List<?> list = giveDao().check4List("Users", usePhone, usePwd);
 			if (list.size() > 0) {
+
 				Users user = (Users) list.get(0);
+
 				if (user.getUseIsprotect() == 1) {
 					if (user.getUseEmei().equals(useEmei)) {
 						do4User(user);// 记录用户
@@ -121,8 +123,6 @@ public class UserAction {
 
 	// 记录用户
 	private void do4User(Users user) {
-		ServletActionContext.getRequest().getSession()
-				.setAttribute("Users", user);// 将登陆用户保存到session
 
 		user.setUseIsonline(1);// 设置用户在线状态
 		user.setUseIslogin(1);// 设置该用户今日已登录
@@ -139,6 +139,7 @@ public class UserAction {
 		List<?> li = giveDao().getObjectListBycond(
 				"from Census where cenMonth='" + month + "' and cenDay=" + day);
 		Census census;
+
 		if (li.size() < 1) {
 			census = new Census();
 			census.setCenMonth(month);
@@ -149,6 +150,7 @@ public class UserAction {
 			census.setCenActivenum(0);
 		} else
 			census = (Census) li.get(0);
+
 		if (onlineNum > census.getCenOnlinenum())
 			census.setCenOnlinenum(onlineNum);
 		giveDao().saveOrUpdate(census);
@@ -159,6 +161,7 @@ public class UserAction {
 
 		// 记录登录时刻
 		int a = 0, b = 0, c = 0, d = 0;
+
 		if (list.size() > 0) {
 			String[] strs = tag.getTagLogtime().split(",");
 			a = Integer.parseInt(strs[0]);
@@ -184,6 +187,7 @@ public class UserAction {
 		String D = "00:00:00";
 		String D1 = "06:59:59";
 		String current = new SimpleDateFormat("HH:mm:ss").format(new Date());
+
 		if (compare(A, current) && compare(current, A1))
 			a++;
 		if (compare(B, current) && compare(current, B1))
@@ -201,23 +205,27 @@ public class UserAction {
 						"Logtime",
 						new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
 								.format(new Date()));// 存储登录时间
+
+		ServletActionContext.getRequest().getSession()
+				.setAttribute("Users", user);// 将登陆用户保存到session
 	}
 
-	/** 计算两个时间的差，单位：分 */
-	private static long getMinutesBetween(String s1, String s2) {
-		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss");
-		try {
-			Date dt1 = sdf.parse(s1);
-			Date dt2 = sdf.parse(s2);
-			return (dt1.getTime() - dt2.getTime()) / (60 * 1000);
-		} catch (Exception e) {
-			return 0;
-		}
-
-	}
+	// /** 计算两个时间的差，单位：分 */
+	// private static long getMinutesBetween(String s1, String s2) {
+	//
+	// SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss");
+	// try {
+	// Date dt1 = sdf.parse(s1);
+	// Date dt2 = sdf.parse(s2);
+	// return (dt1.getTime() - dt2.getTime()) / (60 * 1000);
+	// } catch (Exception e) {
+	// return 0;
+	// }
+	// }
 
 	/** 比较两个时间 */
 	private static boolean compare(String d1, String d2) {
+
 		SimpleDateFormat sdf = new SimpleDateFormat("HH:mm:ss");
 		try {
 			Date dt1 = sdf.parse(d1);
@@ -228,44 +236,48 @@ public class UserAction {
 		}
 	}
 
-	// 用户注销
-	public String quit() {
-		// 计算登录时长
-		Object object1 = ServletActionContext.getRequest().getSession()
-				.getAttribute("Logtime");
-		long diff = 0;
-		if (object1 != null) {
-			String Logtime = object1.toString();
-			diff = getMinutesBetween(
-					new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
-							.format(new Date()),
-					Logtime);
-		}
-
-		// 将登录时长加到数据库
-		Object object2 = ServletActionContext.getRequest().getSession()
-				.getAttribute("Users");
-		Users user = object2 != null ? (Users) object2 : null;
-		if (user != null) {
-			List<?> list = giveDao().getObjectListByfield("Tag", "tagUser",
-					user);
-			if (list.size() > 0) {
-				Tag tag = (Tag) list.get(0);
-				tag.setTagTimeout(tag.getTagTimeout()
-						+ Integer.valueOf("" + diff));
-				giveDao().update(tag);
-			}
-			// 设置用户在线状态
-			user.setUseIsonline(0);
-			giveDao().update(user);
-		}
-		ServletActionContext.getRequest().getSession().invalidate();// 清空session
-
-		return "success";
-	}
+	// // 用户注销
+	// public String quit() {
+	//
+	// // 计算登录时长
+	// Object object1 = ServletActionContext.getRequest().getSession()
+	// .getAttribute("Logtime");
+	// long diff = 0;
+	//
+	// if (object1 != null) {
+	// String Logtime = object1.toString();
+	// diff = getMinutesBetween(
+	// new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
+	// .format(new Date()),
+	// Logtime);
+	// }
+	//
+	// // 将登录时长加到数据库
+	// Object object2 = ServletActionContext.getRequest().getSession()
+	// .getAttribute("Users");
+	// Users user = object2 != null ? (Users) object2 : null;
+	//
+	// if (user != null) {
+	// List<?> list = giveDao().getObjectListByfield("Tag", "tagUser",
+	// user);
+	// if (list.size() > 0) {
+	// Tag tag = (Tag) list.get(0);
+	// tag.setTagTimeout(tag.getTagTimeout()
+	// + Integer.valueOf("" + diff));
+	// giveDao().update(tag);
+	// }
+	// // 设置用户在线状态
+	// user.setUseIsonline(0);
+	// giveDao().update(user);
+	// }
+	// ServletActionContext.getRequest().getSession().invalidate();// 清空session
+	//
+	// return "success";
+	// }
 
 	// 设置收款账户
 	public String updateAlipay() {
+
 		Object object = ServletActionContext.getRequest().getSession()
 				.getAttribute("Users");// 将登陆用户取出
 		Users user = object != null ? (Users) object : null;
@@ -278,6 +290,8 @@ public class UserAction {
 				user.setUseAlipay(useAlipay);
 				user.setUseName(useName);
 				giveDao().update(user);
+				ServletActionContext.getRequest().getSession()
+						.setAttribute("Users", user);// 将更新用户存入session
 				setCode("1");// 修改收款账户成功
 			} else
 				setCode("7");// 手机验证码验证不成功
@@ -295,6 +309,7 @@ public class UserAction {
 			List<?> list = giveDao().getObjectListByfieldInActivate("Users",
 					"useSno", useSno);
 			Users user = list.size() > 0 ? (Users) list.get(0) : null;
+
 			if (user != null && user.getUseId() > 0) {
 				if (user.getUsePwd().equals(usePwd)) {
 					Random random = new Random();
@@ -304,6 +319,7 @@ public class UserAction {
 
 					ServletActionContext.getRequest().getSession()
 							.setAttribute("phone_yzm", code);
+					System.out.println(code);
 					if (PhoneCodeTool.send(usePhone, code, "yzm")) {
 						setCode("5");// 发送成功
 					} else
@@ -313,6 +329,7 @@ public class UserAction {
 			} else {
 				setCode("4");// 考号/学号不存在
 			}
+			return "success";
 		}
 		Object object = ServletActionContext.getRequest().getSession()
 				.getAttribute("Users");// 将登陆用户取出
@@ -340,6 +357,7 @@ public class UserAction {
 				else
 					setCode("6");// 发送失败
 			}
+			return "success";
 		}
 		if (mode != null && mode.equals("server")) {// 服务器验证码发送（无需phone）
 
@@ -357,6 +375,7 @@ public class UserAction {
 				else
 					setCode("6");// 发送失败
 			}
+			return "success";
 		} else {// 普通验证码发送
 			Random random = new Random();
 			String code = "";
@@ -370,8 +389,8 @@ public class UserAction {
 				setCode("5");// 发送成功
 			else
 				setCode("6");// 发送失败
+			return "success";
 		}
-		return "success";
 	}
 
 	// 用户忘记密码
@@ -381,6 +400,7 @@ public class UserAction {
 		List<?> list = giveDao().getObjectListByfield("Users", "usePhone",
 				usePhone);
 		Users user = list.size() > 0 ? (Users) list.get(0) : null;
+
 		if (user != null) {
 			if (PhoneCodeTool.send(user.getUsePhone(), user.getUsePwd(), "pwd"))
 				setCode("5");// 发送成功
@@ -402,6 +422,8 @@ public class UserAction {
 		if (user != null && user.getUsePwd().equals(usePwd)) {
 			user.setUsePwd(newUsepassword);
 			giveDao().update(user);
+			ServletActionContext.getRequest().getSession()
+					.setAttribute("Users", user);// 将更新用户存入session
 			setCode("1");// 修改密码成功
 		} else
 			setCode("3");// 原密码不正确
@@ -411,6 +433,7 @@ public class UserAction {
 
 	// 用户修改手机号
 	public String updatePhone() {
+
 		Object object = ServletActionContext.getRequest().getSession()
 				.getAttribute("Users");// 将登陆用户取出
 		Users user = object != null ? (Users) object : null;
@@ -424,6 +447,8 @@ public class UserAction {
 				user.setUsePhone(usePhone);
 				user.setUseEmei(useEmei);
 				giveDao().update(user);
+				ServletActionContext.getRequest().getSession()
+						.setAttribute("Users", user);// 将更新用户存入session
 				setCode("1");// 绑定成功
 			} else
 				setCode("7");// 手机验证码验证不成功
@@ -433,6 +458,7 @@ public class UserAction {
 
 	// 用户信息修改
 	public String updateInfo() {
+
 		Object object = ServletActionContext.getRequest().getSession()
 				.getAttribute("Users");// 将登陆用户取出
 		Users user = object != null ? (Users) object : null;
@@ -450,6 +476,7 @@ public class UserAction {
 					}
 				}
 			}
+			user.setUseAge(useAge);
 			user.setUseSign(useSign);
 			user.setUseNickname(useNickname);
 			user.setUseCollege(useCollege);
@@ -457,6 +484,8 @@ public class UserAction {
 			user.setUseMajor(useMajor);
 			try {
 				giveDao().update(user);
+				ServletActionContext.getRequest().getSession()
+						.setAttribute("Users", user);// 将更新用户存入session
 				setCode("1");
 			} catch (Exception e) {
 				setCode("0");
@@ -470,6 +499,8 @@ public class UserAction {
 	// #获取当前用户
 	public String giveCurrentUser() {
 
+		json = new JSONObject();
+
 		Object object = ServletActionContext.getRequest().getSession()
 				.getAttribute("Users");
 		Users user = object != null ? (Users) object : null;
@@ -478,18 +509,38 @@ public class UserAction {
 		return "success";
 	}
 
+	// 获取当前用户支付宝信息
+	public String giveCurrentUserAlipay() {
+
+		json = new JSONObject();
+
+		Object obj = ServletActionContext.getRequest().getSession()
+				.getAttribute("Users");// 将登陆用户取出
+		Users user = obj != null ? (Users) obj : null;
+
+		if (user != null) {
+			json.put("Alipay", user.getUseAlipay());
+			json.put("Name", user.getUseName());
+		}
+
+		return "success";
+	}
+
 	// 改变账号保护状态
 	public String changeProtect() {
 
-		Object object = ServletActionContext.getRequest().getSession()
-				.getAttribute("Users");
-		Users user = object != null ? (Users) object : null;
+		Object obj = ServletActionContext.getRequest().getSession()
+				.getAttribute("Users");// 将登陆用户取出
+		Users user = obj != null ? (Users) obj : null;
+
 		if (user != null) {
 			if (user.getUseIsprotect().intValue() == 0) // 关闭状态
 				user.setUseIsprotect(1);
 			else
 				user.setUseIsprotect(0);
 			giveDao().update(user);
+			ServletActionContext.getRequest().getSession()
+					.setAttribute("Users", user);// 将更新用户存入session
 			setCode("1");
 		} else
 			setCode("0");
@@ -500,15 +551,18 @@ public class UserAction {
 	// 改变隐身状态
 	public String changeShowSign() {
 
-		Object object = ServletActionContext.getRequest().getSession()
-				.getAttribute("Users");
-		Users user = object != null ? (Users) object : null;
+		Object obj = ServletActionContext.getRequest().getSession()
+				.getAttribute("Users");// 将登陆用户取出
+		Users user = obj != null ? (Users) obj : null;
+
 		if (user != null) {
 			if (user.getUseShowsign().intValue() == 0) // 关闭状态
 				user.setUseShowsign(1);
 			else
 				user.setUseShowsign(0);
 			giveDao().update(user);
+			ServletActionContext.getRequest().getSession()
+					.setAttribute("Users", user);// 将更新用户存入session
 			setCode("1");
 		} else
 			setCode("0");
@@ -521,9 +575,12 @@ public class UserAction {
 
 		Object object = giveDao().getObjectById(Users.class, useId);
 		Users user = object != null ? (Users) object : null;
+
 		if (user != null && user.getUseId() > 0 && user.getUseIscompany() != 2) {
 			user.setUseMoods(user.getUseMoods() + 1);
 			giveDao().update(user);
+			ServletActionContext.getRequest().getSession()
+					.setAttribute("Users", user);// 将更新用户存入session
 			setCode("1");// 点赞成功
 		} else
 			setCode("0");// 点赞失败
@@ -534,9 +591,12 @@ public class UserAction {
 	// 根据用户ID获取用户
 	public String giveUserById() {
 
+		json = new JSONObject();
+
 		Object object = giveDao().getObjectById(Users.class, useId);
 		Users user = object != null ? (Users) object : null;
-		if (user.getUseShowsign() == 1 && user.getUseIscompany() != 2)// 用户没有隐身
+
+		if (user.getUseShowsign() == 1 && user.getUseIscompany() != 2)// 用户没有隐身，且激活
 			json.put("User", user);
 
 		return "success";
@@ -545,15 +605,17 @@ public class UserAction {
 	// #搜索用户
 	public String giveUserByCond() {
 
+		json = new JSONObject();
+
 		String cond = "where useShowsign==1 and (useNickname=" + useCond
 				+ " or useName=" + useCond + " or useSno=" + useCond
 				+ " or usePhone=" + useCond + ")";
 
 		List<?> list = giveDao().getObjectListBycond("Users", cond);
+
 		List<Users> users = new ArrayList<Users>();
-		for (Object object : list) {
+		for (Object object : list)
 			users.add((Users) object);
-		}
 		json.put("UserList", users);
 
 		return "success";
@@ -561,37 +623,54 @@ public class UserAction {
 
 	// 获取余额
 	public String giveUseRemain() {
+
+		json = new JSONObject();
+
 		Object obj = ServletActionContext.getRequest().getSession()
 				.getAttribute("Users");// 将登陆用户取出
 		Users user = obj != null ? (Users) obj : null;
+
+		Users dbuser = null;
 		if (user != null)
-			json.put("useRemain", user.getUseRemain());
+			dbuser = (Users) giveDao().getObjectById(Users.class,
+					user.getUseId());
+
+		if (dbuser != null)
+			json.put("UseRemain", dbuser.getUseRemain());
 		return "success";
 	}
 
 	// 提现
 	public String giveMoney() {
+
 		Object obj = ServletActionContext.getRequest().getSession()
 				.getAttribute("Users");// 将登陆用户取出
 		Users user = obj != null ? (Users) obj : null;
 
-		if (user != null) {
-			user.setUseRemain(user.getUseRemain() - payNum - 1);
+		Users dbuser = null;
+		if (user != null)
+			dbuser = (Users) giveDao().getObjectById(Users.class,
+					user.getUseId());
+
+		if (dbuser != null && dbuser.getUseRemain() >= payNum) {
+			dbuser.setUseRemain(dbuser.getUseRemain() - payNum);
+			giveDao().update(dbuser);
 
 			/** 提现 */
 			Money money = new Money();
-			money.setMonAlipay(user.getUseAlipay());
+			money.setMonAlipay(dbuser.getUseAlipay());
 			money.setMonComment("/");
-			money.setMonName(user.getUseName());
+			money.setMonName(dbuser.getUseName());
 			money.setMonNo(new SimpleDateFormat("yyyyMMddHHmmssSSS")
 					.format(new Date())
-					+ user.getUseSno().substring(user.getUseSno().length() - 4));
-			if (payNum < 10)
-				money.setMonPay(payNum - 1);// 少于10元，自己出支付宝服务费
-			else
-				money.setMonPay(payNum);// 不低于10元，平台帮出服务费
+					+ dbuser.getUseSno().substring(
+							dbuser.getUseSno().length() - 4));
+			if (payNum < 10) {// 少于10元，自己出支付宝服务费
+				payNum--;
+			}
+			money.setMonPay(payNum);// 不低于10元，平台帮出服务费
 			money.setMonState(0);// 提现
-			money.setMonPhone(user.getUsePhone());
+			money.setMonPhone(dbuser.getUsePhone());
 			money.setMonType("【用户提现】余额");
 			money.setMonTime(new SimpleDateFormat("yyyy-MM-dd")
 					.format(new Date()));
@@ -605,8 +684,12 @@ public class UserAction {
 
 	// 根据任务查找接受者用户
 	public String giveBeUsersByTasId() {
+
+		json = new JSONObject();
+
 		Object object = giveDao().getObjectById(Task.class, tasId);
 		Task task = object != null ? (Task) object : null;
+
 		if (task != null) {
 			Set<Apply> set = task.getTasApplies();// 接受者用户们
 			json.put("UserSet", set);
@@ -697,6 +780,10 @@ public class UserAction {
 
 	public void setPayNum(double payNum) {
 		this.payNum = payNum;
+	}
+
+	public void setUseAge(Integer useAge) {
+		this.useAge = useAge;
 	}
 
 	public void setMode(String mode) {

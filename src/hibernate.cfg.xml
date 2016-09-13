@@ -4,43 +4,81 @@
           "http://hibernate.sourceforge.net/hibernate-configuration-3.0.dtd">
 <hibernate-configuration>
 
-	<session-factory>
-		<property name="dialect">
-			org.hibernate.dialect.MySQLDialect
-		</property>
-		<property name="connection.url">
-			jdbc:mysql://127.0.0.1:3306/hunter?useUnicode=true&amp;characterEncoding=UTF-8
-		</property>
-		<property name="connection.username">root</property>
-		<property name="connection.password">197347Rcl**</property>
-		<property name="connection.driver_class">
-			com.mysql.jdbc.Driver
-		</property>
-		<property name="myeclipse.connection.profile">MySql</property>
-		<property name="format_sql">true</property>
-		<property name="show_sql">false</property>
-		<!-- 打开二级缓存 -->
-		<property name="hibernate.cache.use_second_level_cache">
-			true
-		</property>
-		<!-- 设置Hibernate缓存接口类 -->
-		<property name="hibernate.cache.provider_class">
-			org.hibernate.cache.EhCacheProvider
-		</property>
-		<!-- Hibernate二级缓存策略，是针对于ID查询的缓存策略，对于条件查询则毫无作用。为此，Hibernate提供了针对条件查询的Query Cache-->
-		<property name="hibernate.cache.use_query_cache">true</property>
+<session-factory>
+	<!-- 配置数据库的连接属性 -->
+	<property name="dialect">
+		org.hibernate.dialect.MySQLDialect
+	</property>
+	<property name="connection.url">
+		jdbc:mysql://127.0.0.1:3306/hunter?useUnicode=true&amp;characterEncoding=UTF-8&amp;autoReconnect=true
+	</property>
+	<property name="connection.username">root</property>
+	<property name="connection.password">197347Rcl**</property>
+	<property name="connection.driver_class">
+		com.mysql.jdbc.Driver
+	</property>
+	<property name="myeclipse.connection.profile">MySql</property>
+	<property name="format_sql">true</property>
+	<property name="show_sql">false</property>
 
-		<mapping resource="net/navagraha/hunter/pojo/Task.hbm.xml" />
-		<mapping resource="net/navagraha/hunter/pojo/About.hbm.xml" />
-		<mapping resource="net/navagraha/hunter/pojo/Pay.hbm.xml" />
-		<mapping resource="net/navagraha/hunter/pojo/Tag.hbm.xml" />
-		<mapping resource="net/navagraha/hunter/pojo/Power.hbm.xml" />
-		<mapping resource="net/navagraha/hunter/pojo/Advert.hbm.xml" />
-		<mapping resource="net/navagraha/hunter/pojo/Users.hbm.xml" />
-		<mapping resource="net/navagraha/hunter/pojo/Apply.hbm.xml" />
-		<mapping resource="net/navagraha/hunter/pojo/Money.hbm.xml" />
-		<mapping resource="net/navagraha/hunter/pojo/Census.hbm.xml" />
 
-	</session-factory>
+	<!-- 配置二级缓存 -->
+	<property name="hibernate.cache.use_second_level_cache">
+		true
+	</property>
+	<!-- 设置Hibernate缓存接口类 -->
+	<property name="hibernate.cache.provider_class">
+		org.hibernate.cache.EhCacheProvider
+	</property>
+	<!-- Hibernate二级缓存策略，是针对于ID查询的缓存策略，对于条件查询则毫无作用。为此，Hibernate提供了针对条件查询的Query Cache-->
+	<property name="hibernate.cache.use_query_cache">true</property>
+
+
+	<!-- 配置C3P0连接池属性,测试配置成功：mysql：show processlist 连接数=连接池的最小连接数+3(非连接)，配置失败： 连接数=3(非连接)+1(当前连接)-->
+	<property name="hibernate.conne ction.provider_class">
+		org.hibernate.connection.C3P0ConnectionProvider
+	</property>
+
+	<!--连接池的最小连接数，默认为：3-->
+	<property name="hibernate.c3p0.min_size">4</property>
+
+	<!--连接池的最大连接数,默认值: 15-->
+	<property name="hibernate.c3p0.max_size">30</property>
+
+	<!--连接超时时间-->
+	<property name="hibernate.c3p0.timeout">1800</property>
+
+	<!--每隔多少秒检测连接是否可正常使用  -->
+	<property name="hibernate.c3p0.idle_test_period">18000</property>
+
+	<!--当池中的连接耗尽的时候，一次性增加的连接数量,默认为 3-->
+	<property name="hibernate.c3p0.acquire_increment">1</property>
+	
+	<!--c3p0全局的PreparedStatements缓存的大小。如果maxStatements与maxStatementsPerConnection均为0，则缓存不生效，只要有一个不为0，则语句的缓存就能生效。默认值: 0-->   
+	<property name="hibernate.c3p0.max_statements">100</property>
+	
+	<!-- 是否验证，检查连接 -->
+	<property name="hibernate.c3p0.validate">false</property>
+
+	<!--最大空闲时间，300秒内未使用则连接被丢弃。若为0则永不丢弃。默认值: 0 -->
+	<property name="maxIdleTime">300</property>
+
+	<!-- 初始化连接池中的连接数，取值应在最小连接数与最大连接数之间，默认为3-->
+	<property name="initialPoolSize">2</property>
+
+
+	<!-- 配置持久化映射文件 -->
+	<mapping resource="net/navagraha/hunter/pojo/Task.hbm.xml" />
+	<mapping resource="net/navagraha/hunter/pojo/About.hbm.xml" />
+	<mapping resource="net/navagraha/hunter/pojo/Pay.hbm.xml" />
+	<mapping resource="net/navagraha/hunter/pojo/Tag.hbm.xml" />
+	<mapping resource="net/navagraha/hunter/pojo/Power.hbm.xml" />
+	<mapping resource="net/navagraha/hunter/pojo/Advert.hbm.xml" />
+	<mapping resource="net/navagraha/hunter/pojo/Users.hbm.xml" />
+	<mapping resource="net/navagraha/hunter/pojo/Apply.hbm.xml" />
+	<mapping resource="net/navagraha/hunter/pojo/Money.hbm.xml" />
+	<mapping resource="net/navagraha/hunter/pojo/Census.hbm.xml" />
+
+</session-factory>
 
 </hibernate-configuration>

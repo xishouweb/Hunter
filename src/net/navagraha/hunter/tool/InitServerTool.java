@@ -74,7 +74,7 @@ class MyRunable implements Runnable {
 
 	// 每天统计当天激活总人数和登录总人数
 	private void do4User() {
-		String ruleTime = "23:59";// 在凌晨进行统计
+		String ruleTime = "23:58";// 在凌晨进行统计
 		String sysTime = new SimpleDateFormat("HH:mm").format(new Date());
 		if (ruleTime.equals(sysTime)) {
 
@@ -119,7 +119,11 @@ class MyRunable implements Runnable {
 					"select count(*) from Users where useIslogin=1");
 			int loginNum = obj2 != null ? (Integer) obj2 : 0;
 			giveDao().executeUpdate(
-					"update Users set useIslogin=0 where useIslogin=1");// 初始化当天登录状态
+					"update Users set useIslogin=0 where useIslogin=1");// 初始化当天登录标识
+
+			// giveDao().executeUpdate(
+			// "update Users set useIsonline=0 where useIsonline=1");//
+			// 初始化当天登录状态
 
 			// 获取昨天激活总人数
 			String oldTime[] = getDateBeforeNow(1, "yyyy-MM,dd").split(",");
@@ -143,12 +147,13 @@ class MyRunable implements Runnable {
 			census.setCenActivetotal(activeTotal);
 			census.setCenActivenum(activeTotal - oldactiveTotal);
 			giveDao().saveOrUpdate(census);
+			// System.err.println(census.getcenloginn);
 			/** 设置当天统计结束 */
 
 		}
 	}
 
-	// 超过时间失效
+	// 超过时间失败
 	private void doDB4Set() {
 		String sysTime = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
 				.format(new Date());
@@ -156,16 +161,22 @@ class MyRunable implements Runnable {
 				+ "' and tasState in (0,1,2)";
 		List<?> list = giveDao().getObjectListBycond("Task", hql);
 		if (list.size() > 0) {
-			System.out.println("【超过时间失效】：本次设置" + list.size() + "条任务状态为失败");
+			// System.out.println("【超过时间失效】：本次设置" + list.size() + "条任务状态为失败");
 			for (Object object : list) {
 				Task task = (Task) object;
 				if (task.getTasState() < 2 || task.getTasType().equals("加急个人")) {// 到规定时间都没有人接受任务或者任务为加急任务
 					task.setTasState(5);// 任务失败
+					if (task.getTasType().equals("加急个人"))
+						task.setTasEvaluate("加急任务已过时限，导致任务失败");
+					else
+						task.setTasEvaluate("任务已过平台显示时间且无人接受，导致任务失败");
 					giveDao().update(task);
+
 					Users user = task.getTasUser();
 					user.setUseRemain(user.getUseRemain() + task.getTasPrice()
 							* (1 - FALSE_TAX));// 存入余额
-					giveDao().update(user);
+					giveDao().update(user);// 操作了存入httpsession的user对象的useRemain属性，故拉取user的useRemain时应从数据库拉取
+					// System.out.println("余额：" + user.getUseRemain());
 
 					/** 返钱记录 */
 					Money money = new Money();
@@ -209,7 +220,14 @@ class MyRunable implements Runnable {
 								power.setPowFast(0);
 							}
 							giveDao().saveOrUpdate(power);
+
+							// 消息推送接受者
+							String phone = apply.getAppBeUser().getUsePhone();
+							if (JoinPushTool.connections.containsKey(phone))
+								JoinPushTool.broadcast(
+										"15" + task.getTasTitle(), phone);
 						}
+
 					}
 					/** 能力结束 **/
 
@@ -237,6 +255,12 @@ class MyRunable implements Runnable {
 					}
 					giveDao().saveOrUpdate(payOut);
 					/** 支付日志结束 **/
+
+					// 消息推送发布者
+					String phone = task.getTasUser().getUsePhone();
+					if (JoinPushTool.connections.containsKey(phone))
+						JoinPushTool
+								.broadcast("04" + task.getTasTitle(), phone);
 
 				} else {
 					task.setTasState(6);
@@ -292,9 +316,10 @@ class MyRunable implements Runnable {
 						giveDao().update(apply);
 
 						Users user = apply.getAppBeUser();
-						user.setUseRemain(task.getTasPrice()
-								* (1 - SUCCESS_TAX) / set.size());// 存入余额
-						giveDao().update(user);
+						user.setUseRemain(user.getUseRemain()
+								+ task.getTasPrice() * (1 - SUCCESS_TAX)
+								/ set.size());// 存入余额
+						giveDao().update(user); // 操作了存入httpsession的user对象的useRemain属性，故拉取user的useRemain时应从数据库拉取
 
 						/** 打钱记录 */
 						Money money = new Money();
@@ -351,10 +376,21 @@ class MyRunable implements Runnable {
 						giveDao().saveOrUpdate(payIn);
 						/** 支付日志结束 **/
 
+						// 消息推送接受者
+						String phone = apply.getAppBeUser().getUsePhone();
+						if (JoinPushTool.connections.containsKey(phone))
+							JoinPushTool.broadcast("14" + task.getTasTitle(),
+									phone);
 					}
 				}
 				task.setTasState(4);// 任务成功
+				task.setTasEvaluate("任务进入审核阶段两天，任务自动完成");
 				giveDao().update(task);
+
+				// 消息推送发布者
+				String phone = task.getTasUser().getUsePhone();
+				if (JoinPushTool.connections.containsKey(phone))
+					JoinPushTool.broadcast("03" + task.getTasTitle(), phone);
 			}
 		}
 	}

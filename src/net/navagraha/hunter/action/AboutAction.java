@@ -10,7 +10,7 @@ import net.sf.json.JSONObject;
 public class AboutAction {
 
 	private static ObjectDao objectDao = new ObjectDaoImpl();
-	public static JSONObject json = new JSONObject();
+	public static JSONObject json;
 
 	/** 获取Dao */
 	public ObjectDao giveDao() {
@@ -21,6 +21,9 @@ public class AboutAction {
 
 	// 获取关于
 	public String giveAbout() {
+
+		json = new JSONObject();
+
 		List<?> list = giveDao().getObjectListBycond("About", "");
 		if (list.size() > 0) {
 			About about = (About) list.get(0);

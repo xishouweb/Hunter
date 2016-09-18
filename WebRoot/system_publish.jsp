@@ -70,7 +70,7 @@ Map<String,Session> map=JoinPushTool.connections;
 					<span class="l"><span class="btn btn-success radius"
 						id="month"><i class="Hui-iconfont">&#xe6e0;</i> 结果图表</span>&nbsp;&nbsp;&nbsp;&nbsp;
 						<button class="btn btn-primary radius r mr-20" type="button"
-							onclick="message_start(this,id)">
+							onclick="message_start()">
 							<i class="Hui-iconfont">&#xe603;</i> &nbsp;推送
 						</button> </span>
 				</div>

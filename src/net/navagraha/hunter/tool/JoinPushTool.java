@@ -60,7 +60,6 @@ public class JoinPushTool {
 
 		httpSession = (HttpSession) config.getUserProperties().get(
 				HttpSession.class.getName());// 浏览器登录httpSession为空的（ws与httpSession浏览器登录问题②）
-
 		List<?> list = giveDao().getObjectListBycond("About",
 				"order by aboId desc limit 1");// 取得当前版本
 		if (!version.equals("x.x.x")) {// 非管理员
@@ -87,7 +86,6 @@ public class JoinPushTool {
 
 	@OnClose
 	public void OnClose(@PathParam("phone") String phone) {
-
 		connections.remove(phone);// 移除集合
 		if (!phone.equals("01010000000"))// 非浏览器退出才调用quit，否则，浏览器退出，是没有httpsession的，会出现异常（ws与httpSession浏览器登录问题③）
 			quit();// 用户注销
@@ -123,17 +121,12 @@ public class JoinPushTool {
 		}
 
 		// 将登录时长加到数据库
-		Object object2 = httpSession.getAttribute("Users");// 操作存入httpsession的user对象，而该对象是初次登陆时握手的session的对象，而后面修改后存入session，却不能更新到本httpsession，故拉取user时应从数据库拉取
+		Object object2 = httpSession.getAttribute("Users");
 		Users user = object2 != null ? (Users) object2 : null;
 
-		Users dbuser = null;
-		if (user != null)
-			dbuser = (Users) giveDao().getObjectById(Users.class,
-					user.getUseId());
-
-		if (dbuser != null) {
+		if (user != null) {
 			List<?> list = giveDao().getObjectListByfield("Tag", "tagUser",
-					dbuser);
+					user);
 			if (list.size() > 0) {
 				Tag tag = (Tag) list.get(0);
 				tag.setTagTimeout(tag.getTagTimeout()
@@ -141,8 +134,8 @@ public class JoinPushTool {
 				giveDao().update(tag);
 			}
 			// 设置用户在线状态
-			dbuser.setUseIsonline(0);
-			giveDao().update(dbuser);
+			user.setUseIsonline(0);
+			giveDao().update(user);
 		}
 		httpSession.invalidate();// 清空session
 	}

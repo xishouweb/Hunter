@@ -637,6 +637,10 @@ public class UserAction {
 
 		if (dbuser != null)
 			json.put("UseRemain", dbuser.getUseRemain());
+
+		ServletActionContext.getRequest().getSession()
+				.setAttribute("Users", dbuser);// 将数据库最新User放入session
+
 		return "success";
 	}
 

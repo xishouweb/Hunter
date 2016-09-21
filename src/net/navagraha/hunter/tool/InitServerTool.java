@@ -153,7 +153,7 @@ class MyRunable implements Runnable {
 		}
 	}
 
-	// 超过时间失败
+	// 某些任务超过时间，任务失败
 	private void doDB4Set() {
 		String sysTime = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
 				.format(new Date());
@@ -270,14 +270,15 @@ class MyRunable implements Runnable {
 		}
 	}
 
-	// 超过时间未通过任务自动打钱
+	// 进入审核阶段，超过时间未审核任务，任务自动成功
 	private void doDB4Money() {
 
 		String oldTime = getDateBeforeNow(EXPIRE_DAY, "yyyy-MM-dd HH:mm:ss");
 		String hql = "where tasState=3 and tasFinishtime<='" + oldTime + "'";
 		List<?> list = giveDao().getObjectListBycond("Task", hql);
 		if (list.size() > 0) {
-			System.out.println("【超过时间未通过任务自动打钱】：本次给" + list.size() + "个用户自动打钱");
+			// System.out.println("【进入审核阶段，超过时间未审核任务，任务自动成功】：本次给" + list.size()
+			// + "个用户自动打钱");
 			for (Object object : list) {
 				Task task = (Task) object;
 				Set<Apply> set = task.getTasApplies();
@@ -311,7 +312,7 @@ class MyRunable implements Runnable {
 
 				for (Apply apply : set) {
 
-					if (apply.getAppState() == 1) {// 为该任务的实际接受者
+					if (apply.getAppState() == 5) {// 为该任务的实际接受者，并在申请审核阶段
 						apply.setAppState(3);// 任务成功
 						giveDao().update(apply);
 

@@ -10,7 +10,7 @@
 		org.hibernate.dialect.MySQLDialect
 	</property>
 	<property name="connection.url">
-		jdbc:mysql://127.0.0.1:3306/hunter?useUnicode=true&amp;characterEncoding=UTF-8&amp;autoReconnect=true
+		jdbc:mysql://112.74.131.35:3306/hunter?useUnicode=true&amp;characterEncoding=UTF-8&amp;autoReconnect=true
 	</property>
 	<property name="connection.username">root</property>
 	<property name="connection.password">197347Rcl**</property>

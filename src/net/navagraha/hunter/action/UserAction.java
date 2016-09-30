@@ -631,9 +631,10 @@ public class UserAction {
 		Users user = obj != null ? (Users) obj : null;
 
 		Users dbuser = null;
-		if (user != null)
+		if (user != null) {
 			dbuser = (Users) giveDao().getObjectById(Users.class,
 					user.getUseId());
+		}
 
 		if (dbuser != null)
 			json.put("UseRemain", dbuser.getUseRemain());
@@ -659,6 +660,8 @@ public class UserAction {
 		if (dbuser != null && dbuser.getUseRemain() >= payNum) {
 			dbuser.setUseRemain(dbuser.getUseRemain() - payNum);
 			giveDao().update(dbuser);
+			ServletActionContext.getRequest().getSession()
+					.setAttribute("Users", dbuser);// 将更新用户存入session
 
 			/** 提现 */
 			Money money = new Money();

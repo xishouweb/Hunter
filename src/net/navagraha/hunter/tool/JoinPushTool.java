@@ -51,13 +51,6 @@ public class JoinPushTool {
 
 		connections.put(phone, session);// 加入集合
 
-		// for (String key : connections.keySet()) {
-		// System.out.print(key + "  ");
-		// }
-		// System.out.println();
-		//
-		// System.out.println(version);
-
 		httpSession = (HttpSession) config.getUserProperties().get(
 				HttpSession.class.getName());// 浏览器登录httpSession为空的（ws与httpSession浏览器登录问题②）
 		List<?> list = giveDao().getObjectListBycond("About",
@@ -81,6 +74,24 @@ public class JoinPushTool {
 			session.setMaxTextMessageBufferSize(8);// 只能发送一个字节
 			session.setMaxBinaryMessageBufferSize(8);
 		}
+
+		// 测试httpsession是否是地址引用还是值引用
+		// new Thread(new Runnable() {
+		//
+		// public void run() {
+		// while (true) {
+		// Object object2 = httpSession.getAttribute("Users");
+		// System.out.println("用户姓名:"
+		// + ((Users) object2).getUseNickname() + "  用户余额:"
+		// + ((Users) object2).getUseRemain());
+		// try {
+		// Thread.sleep(1000);// 默认1秒检查一次
+		// } catch (InterruptedException e) {
+		// System.err.println(e.getMessage());
+		// }
+		// }
+		// }
+		// }).start();
 
 	}
 

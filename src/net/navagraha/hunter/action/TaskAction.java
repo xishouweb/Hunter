@@ -42,7 +42,7 @@ public class TaskAction {
 	private String tasEvaluate;
 	private Integer tasCredit;
 
-	private static ObjectDao objectDao = new ObjectDaoImpl();
+	private volatile static ObjectDao objectDao = new ObjectDaoImpl();
 	private static PropertyUtil propertyUtil = new PropertyUtil(
 			"cons.properties");// 初始化参数配置文件
 	private static int HOME_PerPageRow;// 任务大厅每页显示任务数量
@@ -86,8 +86,13 @@ public class TaskAction {
 
 	/** 获取Dao */
 	public ObjectDao giveDao() {
-		if (objectDao == null)
-			objectDao = new ObjectDaoImpl();
+
+		if (objectDao == null) {
+			synchronized (ObjectDaoImpl.class) {
+				if (objectDao == null)
+					objectDao = new ObjectDaoImpl();
+			}
+		}
 		return objectDao;
 	}
 
@@ -351,7 +356,6 @@ public class TaskAction {
 
 		Object object = giveDao().getObjectById(Apply.class, appId);
 		Apply apply = object != null ? (Apply) object : null;
-		System.out.println(appId);
 		if (apply != null && apply.getAppState() == 0) {
 			giveDao().delete(apply);
 			setCode("1");// 操作成功
@@ -639,7 +643,7 @@ public class TaskAction {
 		Object object = giveDao().getObjectById(Task.class, tasId);
 		Task task = object != null ? (Task) object : null;
 
-		if (task != null) {
+		if (task != null && user != null) {
 
 			if (task.getTasState() == 5) {
 				setCode("15");// 任务已失败

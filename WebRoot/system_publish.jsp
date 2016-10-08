@@ -5,7 +5,7 @@
 <%
 	String path = request.getContextPath();
 String basePath = request.getScheme()+"://"+request.getServerName()+":"+request.getServerPort();
-Map<String,Session> map=JoinPushTool.connections;
+Map<String,Session> map=JoinPushTool.getConnections();
 %>
 
 <!DOCTYPE HTML>

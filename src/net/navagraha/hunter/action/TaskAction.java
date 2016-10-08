@@ -86,13 +86,7 @@ public class TaskAction {
 
 	/** 获取Dao */
 	public ObjectDao giveDao() {
-
-		if (objectDao == null) {
-			synchronized (ObjectDaoImpl.class) {
-				if (objectDao == null)
-					objectDao = new ObjectDaoImpl();
-			}
-		}
+		objectDao = new ObjectDaoImpl();
 		return objectDao;
 	}
 
@@ -301,13 +295,13 @@ public class TaskAction {
 
 					// 消息推送接受者
 					String phone = apply.getAppBeUser().getUsePhone();
-					if (JoinPushTool.connections.containsKey(phone))
+					if (JoinPushTool.getConnections().containsKey(phone))
 						JoinPushTool
 								.broadcast("12" + task.getTasTitle(), phone);
 
 					// 消息推送发布者
 					phone = task.getTasUser().getUsePhone();
-					if (JoinPushTool.connections.containsKey(phone))
+					if (JoinPushTool.getConnections().containsKey(phone))
 						JoinPushTool
 								.broadcast("01" + task.getTasTitle(), phone);
 
@@ -329,13 +323,13 @@ public class TaskAction {
 
 					// 消息推送接受者
 					String phone = apply.getAppBeUser().getUsePhone();
-					if (JoinPushTool.connections.containsKey(phone))
+					if (JoinPushTool.getConnections().containsKey(phone))
 						JoinPushTool
 								.broadcast("10" + task.getTasTitle(), phone);
 
 					// 消息推送发布者
 					phone = task.getTasUser().getUsePhone();
-					if (JoinPushTool.connections.containsKey(phone))
+					if (JoinPushTool.getConnections().containsKey(phone))
 						JoinPushTool
 								.broadcast("00" + task.getTasTitle(), phone);
 
@@ -428,7 +422,7 @@ public class TaskAction {
 
 			// 消息推送发布者
 			String phone = task.getTasUser().getUsePhone();
-			if (JoinPushTool.connections.containsKey(phone))
+			if (JoinPushTool.getConnections().containsKey(phone))
 				JoinPushTool.broadcast("04" + task.getTasTitle(), phone);
 
 			setCode("1");// 操作成功
@@ -471,12 +465,13 @@ public class TaskAction {
 
 							// 不通过 消息推送接受者
 							String phone = apply2.getAppBeUser().getUsePhone();
-							if (JoinPushTool.connections.containsKey(phone))
+							if (JoinPushTool.getConnections()
+									.containsKey(phone))
 								JoinPushTool.broadcast(
 										"11" + task.getTasTitle(), phone);
 						} else {// 通过 消息推送接受者
-							if (!JoinPushTool.connections.containsKey(apply2
-									.getAppBeUser().getUsePhone())) // 用户不在线，发送短信
+							if (!JoinPushTool.getConnections().containsKey(
+									apply2.getAppBeUser().getUsePhone())) // 用户不在线，发送短信
 								PhoneCodeTool.send(apply2.getAppBeUser()
 										.getUsePhone(), task.getTasTitle(),
 										"apply");
@@ -501,7 +496,7 @@ public class TaskAction {
 
 					// 消息推送发布者
 					String phone = task.getTasUser().getUsePhone();
-					if (JoinPushTool.connections.containsKey(phone))
+					if (JoinPushTool.getConnections().containsKey(phone))
 						JoinPushTool
 								.broadcast("01" + task.getTasTitle(), phone);
 
@@ -537,15 +532,16 @@ public class TaskAction {
 									// 不通过 消息推送接受者
 									String phone = apply2.getAppBeUser()
 											.getUsePhone();
-									if (JoinPushTool.connections
+									if (JoinPushTool.getConnections()
 											.containsKey(phone))
 										JoinPushTool.broadcast(
 												"11" + task.getTasTitle(),
 												phone);
 								} else {// 通过的
-									if (!JoinPushTool.connections
-											.containsKey(apply2.getAppBeUser()
-													.getUsePhone())) // 用户不在线，发送短信
+									if (!JoinPushTool.getConnections()
+											.containsKey(
+													apply2.getAppBeUser()
+															.getUsePhone())) // 用户不在线，发送短信
 										PhoneCodeTool.send(apply2
 												.getAppBeUser().getUsePhone(),
 												task.getTasTitle(), "apply");
@@ -563,7 +559,7 @@ public class TaskAction {
 
 						// 消息推送发布者
 						String phone = task.getTasUser().getUsePhone();
-						if (JoinPushTool.connections.containsKey(phone))
+						if (JoinPushTool.getConnections().containsKey(phone))
 							JoinPushTool.broadcast("01" + task.getTasTitle(),
 									phone);
 
@@ -584,7 +580,7 @@ public class TaskAction {
 
 						// 消息推送接受者 任务未开始，只通知本申请的接受者
 						String phone = apply.getAppBeUser().getUsePhone();
-						if (JoinPushTool.connections.containsKey(phone))
+						if (JoinPushTool.getConnections().containsKey(phone))
 							JoinPushTool.broadcast("10" + task.getTasTitle(),
 									phone);
 
@@ -619,7 +615,7 @@ public class TaskAction {
 
 				// 消息推送接受者
 				String phone = apply.getAppBeUser().getUsePhone();
-				if (JoinPushTool.connections.containsKey(phone))
+				if (JoinPushTool.getConnections().containsKey(phone))
 					JoinPushTool.broadcast("11" + task.getTasTitle(), phone);
 
 				return "success";
@@ -679,12 +675,12 @@ public class TaskAction {
 
 				// 消息推送接受者
 				String phone = user.getUsePhone();
-				if (JoinPushTool.connections.containsKey(phone))
+				if (JoinPushTool.getConnections().containsKey(phone))
 					JoinPushTool.broadcast("13" + task.getTasTitle(), phone);
 
 				// 消息推送发布者
 				phone = task.getTasUser().getUsePhone();
-				if (JoinPushTool.connections.containsKey(phone))
+				if (JoinPushTool.getConnections().containsKey(phone))
 					JoinPushTool.broadcast("02" + task.getTasTitle(), phone);
 				else
 					PhoneCodeTool.send(phone, task.getTasTitle(), "task");// 短信提示发布者任务已完成
@@ -720,7 +716,7 @@ public class TaskAction {
 
 					// 消息推送发布者
 					String phone = task.getTasUser().getUsePhone();
-					if (JoinPushTool.connections.containsKey(phone))
+					if (JoinPushTool.getConnections().containsKey(phone))
 						JoinPushTool
 								.broadcast("02" + task.getTasTitle(), phone);
 					else
@@ -736,7 +732,7 @@ public class TaskAction {
 
 					// 消息推送接受者 仅仅是该操作完成者
 					String phone = user.getUsePhone();
-					if (JoinPushTool.connections.containsKey(phone))
+					if (JoinPushTool.getConnections().containsKey(phone))
 						JoinPushTool
 								.broadcast("13" + task.getTasTitle(), phone);
 
@@ -890,7 +886,7 @@ public class TaskAction {
 
 					// 消息推送接受者
 					String phone = apply.getAppBeUser().getUsePhone();
-					if (JoinPushTool.connections.containsKey(phone))
+					if (JoinPushTool.getConnections().containsKey(phone))
 						JoinPushTool
 								.broadcast("14" + task.getTasTitle(), phone);
 				}
@@ -902,7 +898,7 @@ public class TaskAction {
 
 				// 消息推送发布者
 				String phone = task.getTasUser().getUsePhone();
-				if (JoinPushTool.connections.containsKey(phone))
+				if (JoinPushTool.getConnections().containsKey(phone))
 					JoinPushTool.broadcast("03" + task.getTasTitle(), phone);
 
 				return "success";
@@ -954,7 +950,7 @@ public class TaskAction {
 
 					// 消息推送接受者
 					String phone = apply.getAppBeUser().getUsePhone();
-					if (JoinPushTool.connections.containsKey(phone))
+					if (JoinPushTool.getConnections().containsKey(phone))
 						JoinPushTool
 								.broadcast("15" + task.getTasTitle(), phone);
 				}
@@ -962,7 +958,7 @@ public class TaskAction {
 
 				// 消息推送发布者
 				String phone = task.getTasUser().getUsePhone();
-				if (JoinPushTool.connections.containsKey(phone))
+				if (JoinPushTool.getConnections().containsKey(phone))
 					JoinPushTool.broadcast("04" + task.getTasTitle(), phone);
 
 				if (task.getTasState() == 6) {// 任务已失效，即失败
@@ -1048,8 +1044,8 @@ public class TaskAction {
 				.getAttribute("Users");// 将登陆用户取出
 		Users user = obj != null ? (Users) obj : null;
 		int userId = user != null ? user.getUseId() : 0;// 如为0，则反馈到前台的json为空，即获取失败
-
-		List<?> list = giveDao().pageListWithCond(
+		List<?> list;
+		list = giveDao().pageListWithCond(
 				"Task",
 				curPage,
 				HOME_PerPageRow,
@@ -1088,7 +1084,11 @@ public class TaskAction {
 
 		// 放入总页数
 		if (curPage == 0) {
-			int size = giveDao().getObjectSizeBycond(
+			int size;
+			size = giveDao().getObjectSizeBycond(
+					"select count(*) from Task where tasType='" + tasType
+							+ "' and  tasState in (0,1)");
+			size = giveDao().getObjectSizeBycond(
 					"select count(*) from Task where tasType='" + tasType
 							+ "' and  tasState in (0,1)");
 			json.put("size", size);

@@ -223,7 +223,8 @@ class MyRunable implements Runnable {
 
 							// 消息推送接受者
 							String phone = apply.getAppBeUser().getUsePhone();
-							if (JoinPushTool.connections.containsKey(phone))
+							if (JoinPushTool.getConnections()
+									.containsKey(phone))
 								JoinPushTool.broadcast(
 										"15" + task.getTasTitle(), phone);
 						}
@@ -258,7 +259,7 @@ class MyRunable implements Runnable {
 
 					// 消息推送发布者
 					String phone = task.getTasUser().getUsePhone();
-					if (JoinPushTool.connections.containsKey(phone))
+					if (JoinPushTool.getConnections().containsKey(phone))
 						JoinPushTool
 								.broadcast("04" + task.getTasTitle(), phone);
 
@@ -378,7 +379,7 @@ class MyRunable implements Runnable {
 
 						// 消息推送接受者
 						String phone = apply.getAppBeUser().getUsePhone();
-						if (JoinPushTool.connections.containsKey(phone))
+						if (JoinPushTool.getConnections().containsKey(phone))
 							JoinPushTool.broadcast("14" + task.getTasTitle(),
 									phone);
 					}
@@ -389,7 +390,7 @@ class MyRunable implements Runnable {
 
 				// 消息推送发布者
 				String phone = task.getTasUser().getUsePhone();
-				if (JoinPushTool.connections.containsKey(phone))
+				if (JoinPushTool.getConnections().containsKey(phone))
 					JoinPushTool.broadcast("03" + task.getTasTitle(), phone);
 			}
 		}

@@ -18,6 +18,10 @@ public class ObjectDaoImpl implements ObjectDao {
 	private Session session;
 	private Transaction tran;
 
+	public Session getSession() {
+		return session;
+	}
+
 	// 通过id查找对象
 	public Object getObjectById(Class cls, int id) {
 		try {

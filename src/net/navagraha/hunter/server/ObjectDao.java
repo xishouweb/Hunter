@@ -2,7 +2,16 @@ package net.navagraha.hunter.server;
 
 import java.util.List;
 
+import org.hibernate.Session;
+
 public interface ObjectDao {
+
+	/**
+	 * 功能：获取session
+	 * 
+	 * @return
+	 */
+	public Session getSession();
 
 	/**
 	 * 功能：通过id查找对象

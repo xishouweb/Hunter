@@ -31,7 +31,7 @@ import net.navagraha.hunter.server.impl.ObjectDaoImpl;
 @ServerEndpoint(value = "/websocket/{phone}/{version}", configurator = GetHttpSessionConfigurator.class)
 public class JoinPushTool {
 
-	public static Map<String, Session> connections = new ConcurrentHashMap<String, Session>();
+	private static Map<String, Session> connections = new ConcurrentHashMap<String, Session>();
 
 	private static ObjectDao objectDao = new ObjectDaoImpl();
 
@@ -42,6 +42,22 @@ public class JoinPushTool {
 		if (objectDao == null)
 			objectDao = new ObjectDaoImpl();
 		return objectDao;
+	}
+
+	/**
+	 * @return the connections
+	 */
+	public static Map<String, Session> getConnections() {
+		// 重新检查connections是否有已关闭的连接，如存在就移除掉
+		for (String key : connections.keySet()) {
+			try {
+				connections.get(key).getBasicRemote().sendText("");
+			} catch (Exception e) {
+				e.printStackTrace();
+				connections.remove(key);
+			}
+		}
+		return connections;
 	}
 
 	@OnOpen
@@ -97,6 +113,7 @@ public class JoinPushTool {
 
 	@OnClose
 	public void OnClose(@PathParam("phone") String phone) {
+		System.out.println("close");
 		connections.remove(phone);// 移除集合
 		if (!phone.equals("01010000000"))// 非浏览器退出才调用quit，否则，浏览器退出，是没有httpsession的，会出现异常（ws与httpSession浏览器登录问题③）
 			quit();// 用户注销
@@ -109,6 +126,8 @@ public class JoinPushTool {
 
 	@OnError
 	public void onError(Throwable t) throws Throwable {
+		System.out.println("error");
+		t.printStackTrace();
 	}
 
 	// 用户注销

@@ -1,1 +1,6 @@
 /net/
+/struts.xml
+/项目参数说明.MF
+/cons.properties
+/ehcache.xml
+/hibernate.cfg.xml

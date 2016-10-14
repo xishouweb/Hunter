@@ -1,11 +1,13 @@
-﻿<%@ page language="java" import="java.util.*" pageEncoding="UTF-8"%>
+﻿<%@page import="java.util.concurrent.Executors"%>
+<%@page import="java.util.concurrent.ScheduledExecutorService"%>
+<%@ page language="java" import="java.util.*" pageEncoding="UTF-8"%>
 <%@page import="net.navagraha.hunter.tool.JoinPushTool"%>
 <%@page import="javax.websocket.Session"%>
 <%@taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
 <%
 	String path = request.getContextPath();
-String basePath = request.getScheme()+"://"+request.getServerName()+":"+request.getServerPort();
-Map<String,Session> map=JoinPushTool.getConnections();
+	String basePath = request.getScheme()+"://"+request.getServerName()+":"+request.getServerPort();
+	Map<String,Session> map=JoinPushTool.getConnections();
 %>
 
 <!DOCTYPE HTML>
@@ -42,7 +44,6 @@ Map<String,Session> map=JoinPushTool.getConnections();
 <script>DD_belatedPNG.fix('*');</script>
 <![endif]-->
 <!--/meta 作为公共模版分离出去-->
-
 <title>消息推送</title>
 </head>
 <body>
@@ -60,7 +61,7 @@ Map<String,Session> map=JoinPushTool.getConnections();
 			<div id="tab-system" class="HuiTab">
 
 				<div class="tabBar cl">
-					<span>局部推送</span><span>全局推送</span>
+					<span onclick="change01()">局部推送</span><span onclick="change02()">全局推送</span>
 				</div>
 
 				<br />
@@ -99,22 +100,29 @@ Map<String,Session> map=JoinPushTool.getConnections();
 									for(String key:map.keySet()){
 								%>
 								<tr class="text-c">
-									<td><input type="checkbox" value="" name=""></td>
+									<td>
+										<%
+											if(key.equals("01010000000"))
+																																																																																																																		  out.print("<input type='checkbox' value='' name='' disable='true'>");
+																																																																																																											else
+																																																																																																																		  out.print("<input type='checkbox' value='' name='' >");
+										%>
+									</td>
 									<td><%=map.get(key).getId()%></td>
 									<td><%=key%></td>
 									<%
 										if(key.equals("01010000000"))
-																															out.print("<td>管理员</td>");
-																														else
-																															out.print("<td>普通用户</td>");
-																														if(map.get(key).isOpen()==true)
-																															out.print("<td class='td-status'><span class='label label-success radius'>已连接</span></td>");
-																														else
-																															out.print("<td class='td-status'><span class='label label-false radius'>未连接</span></td>");
-																														if(map.get(key).isSecure()==true)
-																															out.print("<td class='td-status'><span class='label label-success radius'>可信任</span></td>");
-																														else
-																															out.print("<td class='td-status'><span class='label label-warning radius'>不可信任</span></td>");
+																																																																																																																																																						out.print("<td>管理员</td>");
+																																																																																																																																																					else
+																																																																																																																																																						out.print("<td>普通用户</td>");
+																																																																																																																																																					if(map.get(key).isOpen()==true)
+																																																																																																																																																						out.print("<td class='td-status'><span class='label label-success radius'>已连接</span></td>");
+																																																																																																																																																					else
+																																																																																																																																																						out.print("<td class='td-status'><span class='label label-false radius'>未连接</span></td>");
+																																																																																																																																																					if(map.get(key).isSecure()==true)
+																																																																																																																																																						out.print("<td class='td-status'><span class='label label-success radius'>可信任</span></td>");
+																																																																																																																																																					else
+																																																																																																																																																						out.print("<td class='td-status'><span class='label label-warning radius'>不可信任</span></td>");
 									%>
 									<td><%=map.get(key).getMaxBinaryMessageBufferSize()/8%></td>
 									<td><%=map.get(key).getMaxTextMessageBufferSize()/8%>（100个汉字）</td>
@@ -130,17 +138,10 @@ Map<String,Session> map=JoinPushTool.getConnections();
 
 				<div class="tabCon">
 					<div class="row cl">
-						<br /> <label class="form-label col-xs-4 col-sm-2">要推送：</label>
-						<div class="formControls col-xs-8 col-sm-6">
-							<textarea class="textarea" name="" id="global"></textarea>
-						</div>
-					</div>
-					<br /> <br />
-					<div class="row cl">
 						<label class="form-label col-xs-4 col-sm-2">已推送：</label>
 						<div class="formControls col-xs-8 col-sm-6">
 							<div class="textarea" name="console" id="console"
-								style="height: 350px;"></div>
+								style="height: 320px;"></div>
 						</div>
 					</div>
 				</div>
@@ -152,6 +153,8 @@ Map<String,Session> map=JoinPushTool.getConnections();
 		src="<%=basePath%>/MyAlipay_MD5/lib/jquery/1.9.1/jquery.min.js"></script>
 	<script type="text/javascript"
 		src="<%=basePath%>/MyAlipay_MD5/lib/layer/1.9.3/layer.js"></script>
+	<script type="text/javascript"
+		src="<%=basePath%>/MyAlipay_MD5/lib/layer/1.9.3/extend/layer.ext.js"></script>
 	<script type="text/javascript"
 		src="<%=basePath%>/MyAlipay_MD5/lib/icheck/jquery.icheck.min.js"></script>
 	<script type="text/javascript"
@@ -170,25 +173,50 @@ Map<String,Session> map=JoinPushTool.getConnections();
 
 	<!--请在下方写此页面业务相关的脚本-->
 	<script type="text/javascript">
-		/*消息-全局推送*/
+		/*消息-推送*/
+		var local_message;
+		var error_message;
+
 		function message_start() {
-			layer.confirm('确认要推送吗？', function(index) {
-				if (Chat.sendMessage())
-					layer.msg('已推送!', {
-						icon : 6,
-						time : 1000
-					});
-				else {
-					layer.msg('不可推送空消息!', {
-						icon : 5,
-						time : 1000
+
+			layer.prompt({
+				title : '请输入局部推送内容:',
+				formType : 2
+			}, function(text, index) {
+				local_message = text;
+
+				if (local_message != null) {
+					layer.confirm('			确认要推送此消息吗？', {
+						btn : [ '确认', '取消' ]
+					}, function(index) {
+						if (Chat.sendMessage())
+							layer.msg('已推送!', {
+								icon : 6,
+								time : 1000
+							});
+						else {
+							layer.msg(error_message, {
+								icon : 5,
+								time : 1000
+							});
+						}
 					});
 				}
-
+				layer.close(index);
 			});
 		}
 
-		<!-- / websocekt-->
+		var flag = 1;//默认局部
+		/*局部推送*/
+		function change01() {
+			flag = 1;
+		}
+
+		function change02() {
+			flag = 2;//全局
+		}
+
+		/*websocekt:Chat.initialize();*/
 
 		var Chat = {};
 
@@ -213,32 +241,70 @@ Map<String,Session> map=JoinPushTool.getConnections();
 			};
 
 			Chat.socket.onmessage = function(message) {
-				Console.log('Info: ' + message.data);
+				Console.log('Info: ' + message.data.substring(3));//截取为了去掉后台添加的标记“sys”
 			};
 		});
 
 		Chat.initialize = function() {
 			if (window.location.protocol == 'http:') {
-				Chat.connect('ws://www.7hunter.cn/Hunter/websocket/01010000000/x.x.x');
+				Chat
+						.connect('ws://192.168.0.1:8080/Hunter/websocket/01010000000/x.x.x');
 			} else {
-				Chat.connect('wss://www.7hunter.cn/Hunter/websocket/01010000000/x.x.x');//www.7hunter.cn
+				Chat
+						.connect('wws://192.168.0.1:8080/Hunter/websocket/01010000000/x.x.x');//www.7hunter.cn
 			}
 		};
 
 		Chat.sendMessage = (function() {
-			var message = document.getElementById('global').value;
-			if (message != '') {
-				Chat.socket.send(message);
-				document.getElementById('global').value = '';
+			if (flag == 1) {//局部推送
+				var tbody = document.getElementById("tbody");
+				if (tbody.rows.length < 1) {
+					error_message = "ERROR,当前无用户可进行推送";
+					return false;
+				}
+				var row;
+				var cell;
+				var chk;
+				var num = 0;
+				var detail = "";
+				//倒着迭代可以少做一些处理
+				for (var i = tbody.rows.length - 1; i > -1; i--) {
+					row = tbody.rows[i];//迭代当前行
+					cell = row.cells[0];//复选框所在的单元格
+					chk = cell.getElementsByTagName("input")[0];//获取复选框
+					if (chk != undefined) {
+						if (chk.checked) {//如果选中 
+
+							if (detail == "")
+								detail += row.cells[2].innerHTML;
+							else
+								detail += "/" + row.cells[2].innerHTML;
+							num++;
+						}
+					} else {
+						error_message = "ERROR,当前无用户可选择";
+						return false;
+					}
+				}
+				if (num <= 0) {
+					error_message = "ERROR,当前选择用户为空，无法推送";
+					return false;
+				}
+				detail += "/" + local_message;
+				Chat.socket.send(detail);
 				return true;
-			} else
-				return false;
+			} else {//全局推送
+				Chat.socket.send(local_message);
+				return true;
+			}
 		});
 
 		var Console = {};
 
 		Console.log = (function(message) {
 			var console = document.getElementById('console');
+			if (console.childNodes.length >= 10)//多余10个移除第一个
+				console.removeChild(console.firstChild);
 			var p = document.createElement('p');
 			p.style.wordWrap = 'break-word';
 			p.innerHTML = message;
@@ -250,8 +316,9 @@ Map<String,Session> map=JoinPushTool.getConnections();
 		});
 
 		Chat.initialize();
+		/* 请在上方写此页面业务相关的脚本*/
 
-		<!-- / 请在上方写此页面业务相关的脚本-->
+		/* 请在上方写此页面业务相关的脚本*/
 
 		$('.table-sort').dataTable({
 			"aaSorting" : [ [ 1, "asc" ] ],//默认第几个排序

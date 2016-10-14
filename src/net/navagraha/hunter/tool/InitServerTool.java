@@ -6,6 +6,7 @@ import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.ScheduledFuture;
 
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
@@ -23,16 +24,20 @@ import net.navagraha.hunter.server.impl.ObjectDaoImpl;
 
 public class InitServerTool implements ServletContextListener {
 	private MyRunable runable;
+	private ScheduledFuture<?> timer;
 
 	public void contextDestroyed(ServletContextEvent sce) {
 		if (runable != null)// 关闭服务器，停止线程
 			runable.run = false;
+		if (timer != null)
+			timer.cancel(true);// 取消webSocket心跳测试
 	}
 
 	public void contextInitialized(ServletContextEvent sce) {
 		runable = new MyRunable();
 		Thread thread = new Thread(runable);
-		thread.start();
+		thread.start();// 开启24小时监测线程
+		timer = JoinPushTool.startHeartBeat();// 开启webSocket心跳测试
 	}
 
 }

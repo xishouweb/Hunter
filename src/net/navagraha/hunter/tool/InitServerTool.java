@@ -82,7 +82,6 @@ class MyRunable implements Runnable {
 		String ruleTime = "23:58";// 在凌晨进行统计
 		String sysTime = new SimpleDateFormat("HH:mm").format(new Date());
 		if (ruleTime.equals(sysTime)) {
-
 			// /** 获取活跃用户前三名进行奖励 */
 			// List<?> list = giveDao().getSomeObjectListBycond(
 			// "from Tag order by tagTimeout desc", 3);

@@ -72,7 +72,8 @@ public class UserAction {
 				"useSno", useSno);
 		Users user = list.size() > 0 ? (Users) list.get(0) : null;
 
-		if (user != null && user.getUseId() > 0) {
+		if (user != null && user.getUseId() > 0 && user.getUseIscompany() != 3
+				&& user.getUseIscompany() != 5) {
 
 			Object object = ServletActionContext.getRequest().getSession()
 					.getAttribute("phone_yzm");
@@ -86,7 +87,7 @@ public class UserAction {
 			} else
 				setCode("7");// 手机验证码验证不成功
 		} else
-			setCode("4");// 考号/学号不存在
+			setCode("4");// 学号不存在
 
 		return "success";
 	}

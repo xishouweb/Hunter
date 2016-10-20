@@ -5,7 +5,7 @@ user表：
   use_collegesize：0-4
   use_showsign：0/1-否/是
   use_isprotect：0/1-否/是
-  use_iscompany：0/1/2-否/是/未激活
+  use_iscompany：0/1/2/3/5-已激活/已激活(加盟者)-暂未使用/未激活/未激活禁用（5-2）/激活禁用（5-0）  
 
 reply表：
   rep_type：0/1-某楼层/楼层间
@@ -17,7 +17,7 @@ tag表：
   tag_timeout：单位分钟
   
 power表：
-   pow_credit：加-用户打分1-5 减-系统根据赏金减（失败时）  ，初始为50
+   pow_credit：加-用户打分1-5 减-系统根据赏金减（失败时） ，初始为50
    pow_fast：完成时间-接受时间
    
 money表：

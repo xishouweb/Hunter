@@ -241,7 +241,6 @@ public class JoinPushTool {
 		} catch (Exception e) {
 			return 0;
 		}
-
 	}
 
 }

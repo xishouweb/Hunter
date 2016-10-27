@@ -88,6 +88,3 @@ PubMoney
 默认mysql数据库若空闲21天会断开连接
  2.对于存入httpsession中的对象，如果其他地方修改了该对象，那么写前台获取该对象的方法时，应从数据库拉取
 目前只有user对象存Session,前台修改user属性时应更新session，但是，其他地方，如InitServer,会修改其UserRemain属性，故方法中写：该属性由数据库拉取
-   
-   
-   

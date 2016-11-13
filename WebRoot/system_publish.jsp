@@ -180,7 +180,7 @@
 		function message_start() {
 
 			layer.prompt({
-				title : '请输入局部推送内容:',
+				title : '请输入推送内容:',
 				formType : 2
 			}, function(text, index) {
 				local_message = text;
@@ -248,10 +248,10 @@
 		Chat.initialize = function() {
 			if (window.location.protocol == 'http:') {
 				Chat
-						.connect('ws://192.168.0.1:8080/Hunter/websocket/01010000000/x.x.x');
+						.connect('ws://127.0.0.1:8080/Hunter/websocket/01010000000/x.x.x');
 			} else {
 				Chat
-						.connect('wws://192.168.0.1:8080/Hunter/websocket/01010000000/x.x.x');//www.7hunter.cn
+						.connect('wws://127.0.0.1:8080/Hunter/websocket/01010000000/x.x.x');//www.7hunter.cn
 			}
 		};
 

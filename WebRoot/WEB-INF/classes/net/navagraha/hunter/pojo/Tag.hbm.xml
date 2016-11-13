@@ -3,7 +3,7 @@
 "http://hibernate.sourceforge.net/hibernate-mapping-3.0.dtd">
 
 <hibernate-mapping>
-    <class name="net.navagraha.hunter.pojo.Tag" table="tag" catalog="hunter">
+    <class name="net.navagraha.hunter.pojo.Tag" table="tag" catalog="lpt">
         <cache usage="read-write"/>
         <id name="tagId" type="java.lang.Integer">
             <column name="tag_id" />

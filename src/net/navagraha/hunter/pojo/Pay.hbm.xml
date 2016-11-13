@@ -3,7 +3,7 @@
 "http://hibernate.sourceforge.net/hibernate-mapping-3.0.dtd">
 
 <hibernate-mapping>
-    <class name="net.navagraha.hunter.pojo.Pay" table="pay" catalog="hunter">
+    <class name="net.navagraha.hunter.pojo.Pay" table="pay" catalog="lpt">
     	<cache usage="read-write"/>
         <id name="payId" type="java.lang.Integer">
             <column name="pay_id" />

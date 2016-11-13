@@ -5,7 +5,7 @@
 	xsi:schemaLocation="http://java.sun.com/xml/ns/javaee 
 	http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd">
   <welcome-file-list>
-    <welcome-file>index.jsp</welcome-file>
+    <welcome-file>index.html</welcome-file>
   </welcome-file-list>
   
     <!-- 该监听器用于服务器启动 -->
@@ -16,7 +16,7 @@
    <!-- 该过滤器用于编码处理并测试后台是否获取参数，投入使用时可去掉-->
    <filter>
 		<filter-name>CharsetFilter</filter-name>
-		<filter-class>net.navagraha.hunter.tool.CharacterFilterTool</filter-class>
+		<filter-class>net.navagraha.hunter.tool.AllPowerfulCharsetFilter</filter-class>
 		<init-param>  
 	        <param-name>encoding</param-name>  
 	        <param-value>UTF-8</param-value>  

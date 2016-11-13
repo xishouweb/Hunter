@@ -3,7 +3,7 @@
 "http://hibernate.sourceforge.net/hibernate-mapping-3.0.dtd">
 
 <hibernate-mapping>
-    <class name="net.navagraha.hunter.pojo.Money" table="money" catalog="hunter">
+    <class name="net.navagraha.hunter.pojo.Money" table="money" catalog="lpt">
         <id name="monId" type="java.lang.Integer">
             <column name="mon_id" />
             <generator class="identity" />

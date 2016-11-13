@@ -3,7 +3,7 @@
 "http://hibernate.sourceforge.net/hibernate-mapping-3.0.dtd">
 <!-- 访问量小，不设置缓存 -->
 <hibernate-mapping>
-    <class name="net.navagraha.hunter.pojo.About" table="about" catalog="hunter">
+    <class name="net.navagraha.hunter.pojo.About" table="about" catalog="lpt">
         <id name="aboId" type="java.lang.Integer">
             <column name="abo_id" />
             <generator class="identity" />

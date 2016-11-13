@@ -3,7 +3,7 @@
 "http://hibernate.sourceforge.net/hibernate-mapping-3.0.dtd">
 <!-- 并发访问量较大，不设置缓存 -->
 <hibernate-mapping>
-    <class name="net.navagraha.hunter.pojo.Apply" table="apply" catalog="hunter">
+    <class name="net.navagraha.hunter.pojo.Apply" table="apply" catalog="lpt">
         <cache usage="read-write"/>
         <id name="appId" type="java.lang.Integer">
             <column name="app_id" />

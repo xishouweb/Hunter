@@ -20,6 +20,7 @@ public interface ObjectDao {
 	 * @param id
 	 * @return
 	 */
+
 	public Object getObjectById(Class cls, int id);
 
 	/**

@@ -3,7 +3,7 @@
 "http://hibernate.sourceforge.net/hibernate-mapping-3.0.dtd">
 
 <hibernate-mapping>
-    <class name="net.navagraha.hunter.pojo.Power" table="power" catalog="hunter">
+    <class name="net.navagraha.hunter.pojo.Power" table="power" catalog="lpt">
         <cache usage="read-write"/>
         <id name="powId" type="java.lang.Integer">
             <column name="pow_id" />

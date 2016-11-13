@@ -94,8 +94,8 @@ public class PowerAction {
 	}
 
 	/** 等级算法 */
-	private final static String levelStr[] = new String[] { "F级猎手", "E级猎手",
-			"D级猎手", "C级猎手", "B级猎手", "A级猎手" };
+	private final static String levelStr[] = new String[] { "F级兼职者", "E级兼职者",
+			"D级兼职者", "C级兼职者", "B级兼职者", "A级兼职者" };
 
 	/**
 	 * 功能：根据信誉值计算段位
@@ -117,12 +117,12 @@ public class PowerAction {
 				return levelStr[index] + " " + (6 - count % 6) + "段";
 
 			if (credit < 0)
-				return "F级猎手 5段";
+				return "F级兼职者 5段";
 
 			begin += diff + 1;
 			count++;
 		}
-		return "S级猎手";
+		return "S级兼职者";
 	}
 
 	// Property accessors

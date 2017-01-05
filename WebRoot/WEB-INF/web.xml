@@ -13,7 +13,7 @@
         <listener-class>net.navagraha.hunter.tool.InitServerTool</listener-class> 
     </listener>
   
-   <!-- 该过滤器用于编码处理并测试后台是否获取参数，投入使用时可去掉
+   <!-- 该过滤器用于编码处理-->
    <filter>
 		<filter-name>CharsetFilter</filter-name>
 		<filter-class>net.navagraha.hunter.tool.AllPowerfulCharsetFilter</filter-class>
@@ -25,7 +25,7 @@
 	<filter-mapping>
 		<filter-name>CharsetFilter</filter-name>
 		<url-pattern>/*</url-pattern>
-	</filter-mapping>-->
+	</filter-mapping>
   
   <filter>
   	<filter-name>struts2</filter-name>

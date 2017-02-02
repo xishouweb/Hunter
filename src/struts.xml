@@ -24,13 +24,22 @@
 
 	<package name="hunter" extends="json-default">
 
+	   <!-- root(默认)、includeProperties和excludeNullProperties，或给pojo加json注解方式配置json -->
        <action name="*_*" class="net.navagraha.hunter.action.{1}Action" method="{2}">
-           <result name="success" type="json"><param name="code">code</param> </result>
-           <result name="error" type="json"><param name="code">code</param> </result>
+           <result name="success" type="json">
+           	<param name="ignoreHierarchy">false</param>
+           	<param name="sCode">sCode</param> 
+           </result>
+           <result name="error" type="json">
+           	<param name="ignoreHierarchy">false</param>
+           	<param name="sCode">sCode</param>
+           </result>
        </action>
        
        <action name="uploadImg" class="net.navagraha.hunter.tool.FileUploadTool" method="uploadImg">
-          <result name="success" type="json"><param name="json">code</param> </result>
+          <result name="success" type="json">
+            <param name="sCode">sCode</param> 
+          </result>
              <!-- 定义文件上传拦截器 -->
              <interceptor-ref name="fileUpload">
                  <!-- 设置文件上传大小 -->

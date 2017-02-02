@@ -11,7 +11,8 @@ import java.util.concurrent.ScheduledFuture;
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
 
-import net.navagraha.hunter.lib.PropertyUtil;
+import net.navagraha.hunter.dao.ObjectDao;
+import net.navagraha.hunter.dao.ObjectDaoImpl;
 import net.navagraha.hunter.pojo.Apply;
 import net.navagraha.hunter.pojo.Census;
 import net.navagraha.hunter.pojo.Money;
@@ -19,21 +20,26 @@ import net.navagraha.hunter.pojo.Pay;
 import net.navagraha.hunter.pojo.Power;
 import net.navagraha.hunter.pojo.Task;
 import net.navagraha.hunter.pojo.Users;
-import net.navagraha.hunter.server.ObjectDao;
-import net.navagraha.hunter.server.impl.ObjectDaoImpl;
 
+/**
+ * 功能描述：web容器加载时调用类，该类主要完成平台的自动化操作
+ * 
+ * @author 冉椿林
+ *
+ * @since 1.0
+ */
 public class InitServerTool implements ServletContextListener {
 	private MyRunable runable;
 	private ScheduledFuture<?> timer;
 
-	public void contextDestroyed(ServletContextEvent sce) {
+	public void contextDestroyed(ServletContextEvent sce) {// 服务器关闭时调用
 		if (runable != null)// 关闭服务器，停止线程
-			runable.run = false;
+			runable.bIsRun = false;
 		if (timer != null)
 			timer.cancel(true);// 取消webSocket心跳测试
 	}
 
-	public void contextInitialized(ServletContextEvent sce) {
+	public void contextInitialized(ServletContextEvent sce) {// 服务器启动时调用
 		runable = new MyRunable();
 		Thread thread = new Thread(runable);
 		thread.start();// 开启24小时监测线程
@@ -44,31 +50,36 @@ public class InitServerTool implements ServletContextListener {
 
 class MyRunable implements Runnable {
 
-	private static ObjectDao objectDao = new ObjectDaoImpl();
 	private static PropertyUtil propertyUtil = new PropertyUtil(
 			"cons.properties");
+
 	private static int EXPIRE_DAY;// 过期时间
 	private static int CHECK_SECOND;// 每隔多少秒检查一次
 	private static double SUCCESS_TAX;// 成功服务费
 	private static double FALSE_TAX;// 失败服务费
+
 	static {
-		EXPIRE_DAY = Integer.parseInt(propertyUtil
-				.getPropertyValue("EXPIRE_DAY"));
-		CHECK_SECOND = Integer.parseInt(propertyUtil
-				.getPropertyValue("CHECK_SECOND"));
-		SUCCESS_TAX = Double.parseDouble(propertyUtil
-				.getPropertyValue("SUCCESS_TAX"));
-		FALSE_TAX = Double.parseDouble(propertyUtil
-				.getPropertyValue("FALSE_TAX"));
+		try {
+			EXPIRE_DAY = Integer.parseInt(propertyUtil
+					.getPropertyValue("EXPIRE_DAY"));
+			CHECK_SECOND = Integer.parseInt(propertyUtil
+					.getPropertyValue("CHECK_SECOND"));
+			SUCCESS_TAX = Double.parseDouble(propertyUtil
+					.getPropertyValue("SUCCESS_TAX"));
+			FALSE_TAX = Double.parseDouble(propertyUtil
+					.getPropertyValue("FALSE_TAX"));
+		} catch (NumberFormatException e) {
+			System.err.println("异常来自项目Hunter:\n" + e.getMessage());
+		}
 	}
 
-	public boolean run = true;
+	public boolean bIsRun = true;
 
 	public void run() {
-		while (run) {
-			doDB4Set();
-			doDB4Money();
-			do4User();
+		while (bIsRun) {
+			doDB4Set();// 超过时间任务失败
+			doDB4Money();// 超过时间未通过任务自动打钱
+			do4User();// 每天统计当天激活总人数和登录总人数
 			try {
 				Thread.sleep(CHECK_SECOND);// 默认60秒检查一次
 			} catch (InterruptedException e) {
@@ -77,13 +88,14 @@ class MyRunable implements Runnable {
 		}
 	}
 
-	// 每天统计当天激活总人数和登录总人数
+	/** 每天统计当天激活总人数和登录总人数 */
 	private void do4User() {
-		String ruleTime = "23:58";// 在凌晨进行统计
-		String sysTime = new SimpleDateFormat("HH:mm").format(new Date());
-		if (ruleTime.equals(sysTime)) {
+		String sRuleTime = "23:58";// 在凌晨进行统计
+		String sSysTime = new SimpleDateFormat("HH:mm").format(new Date());
+		if (sRuleTime.equals(sSysTime)) {
+
 			// /** 获取活跃用户前三名进行奖励 */
-			// List<?> list = giveDao().getSomeObjectListBycond(
+			// List<?> list = giveDaoInstance().getSomeObjectListBycond(
 			// "from Tag order by tagTimeout desc", 3);
 			// for (Object object : list) {
 			// Tag tag = (Tag) object;
@@ -103,68 +115,68 @@ class MyRunable implements Runnable {
 			// money.setMonType("【内测活动】在线时长前三名");
 			// money.setMonTime(new SimpleDateFormat("yyyy-MM-dd")
 			// .format(new Date()));
-			// giveDao().save(money);
+			// giveDaoInstance().save(money);
 			// }
 			// /** 奖励结束 */
 
 			/** 设置当天统计 */
 			// 统计当天激活人数
 			String time[] = getDateBeforeNow(0, "yyyy-MM,dd").split(",");
-			String month = time[0];
-			int day = Integer.parseInt(time[1]);
+			String sMonth = time[0];
+			int iDay = Integer.parseInt(time[1]);
 
 			// 获取激活总人数
-			Object obj1 = giveDao().getObjectSizeBycond(
+			Object obj1 = giveDaoInstance().getObjectSizeBycond(
 					"select count(*) from Users where useIscompany in(0,1)");
-			int activeTotal = obj1 != null ? (Integer) obj1 : 0;
+			int iActiveTotal = obj1 != null ? (Integer) obj1 : 0;
 
 			// 获取当天登录总人数
-			Object obj2 = giveDao().getObjectSizeBycond(
+			Object obj2 = giveDaoInstance().getObjectSizeBycond(
 					"select count(*) from Users where useIslogin=1");
-			int loginNum = obj2 != null ? (Integer) obj2 : 0;
-			giveDao().executeUpdate(
+			int iLoginNum = obj2 != null ? (Integer) obj2 : 0;
+			giveDaoInstance().executeUpdate(
 					"update Users set useIslogin=0 where useIslogin=1");// 初始化当天登录标识
 
-			// giveDao().executeUpdate(
+			// giveDaoInstance().executeUpdate(
 			// "update Users set useIsonline=0 where useIsonline=1");//
 			// 初始化当天登录状态
 
 			// 获取昨天激活总人数
 			String oldTime[] = getDateBeforeNow(1, "yyyy-MM,dd").split(",");
-			int oldactiveTotal = giveDao().getObjectSizeBycond(
+			int iOldactiveTotal = giveDaoInstance().getObjectSizeBycond(
 					"select cenActivetotal from Census where cenMonth='"
 							+ oldTime[0] + "' and cenDay=" + oldTime[1]);
 
-			List<?> li = giveDao().getObjectListBycond(
-					"from Census where cenMonth='" + month + "' and cenDay="
-							+ day);
+			List<?> li = giveDaoInstance().getObjectListBycond(
+					"from Census where cenMonth='" + sMonth + "' and cenDay="
+							+ iDay);
 			Census census;
-			if (li.size() < 1) {
+			if (li.size() < 1 || !(li.get(0) instanceof Census)) {
 				census = new Census();
-				census.setCenMonth(month);
-				census.setCenDay(day);
+				census.setCenMonth(sMonth);
+				census.setCenDay(iDay);
 				census.setCenOnlinenum(0);
 				census.setCenLoginnum(0);
 			} else
 				census = (Census) li.get(0);
-			census.setCenLoginnum(loginNum);
-			census.setCenActivetotal(activeTotal);
-			census.setCenActivenum(activeTotal - oldactiveTotal);
-			giveDao().saveOrUpdate(census);
+			census.setCenLoginnum(iLoginNum);
+			census.setCenActivetotal(iActiveTotal);
+			census.setCenActivenum(iActiveTotal - iOldactiveTotal);
+			giveDaoInstance().saveOrUpdate(census);
 			// System.err.println(census.getcenloginn);
 			/** 设置当天统计结束 */
 
 		}
 	}
 
-	// 超过时间失败
+	/** 超过时间任务失败 */
 	private void doDB4Set() {
-		String sysTime = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
+		String sSysTime = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
 				.format(new Date());
-		String hql = "where tasTimeout<='" + sysTime
+		String sHql = "where tasTimeout<='" + sSysTime
 				+ "' and tasState in (0,1,2)";
-		List<?> list = giveDao().getObjectListBycond("Task", hql);
-		if (list.size() > 0) {
+		List<?> list = giveDaoInstance().getObjectListBycond("Task", sHql);
+		if (list.size() > 0 && list.get(0) instanceof Task) {
 			// System.out.println("【超过时间失效】：本次设置" + list.size() + "条任务状态为失败");
 			for (Object object : list) {
 				Task task = (Task) object;
@@ -174,12 +186,12 @@ class MyRunable implements Runnable {
 						task.setTasEvaluate("加急任务已过时限，导致任务失败");
 					else
 						task.setTasEvaluate("任务已过平台显示时间且无人接受，导致任务失败");
-					giveDao().update(task);
+					giveDaoInstance().update(task);
 
 					Users user = task.getTasUser();
 					user.setUseRemain(user.getUseRemain() + task.getTasPrice()
 							* (1 - FALSE_TAX));// 存入余额
-					giveDao().update(user);// 操作了存入httpsession的user对象的useRemain属性，故拉取user的useRemain时应从数据库拉取
+					giveDaoInstance().update(user);// 操作了存入httpsession的user对象的useRemain属性，故拉取user的useRemain时应从数据库拉取
 					// System.out.println("余额：" + user.getUseRemain());
 
 					/** 返钱记录 */
@@ -197,7 +209,7 @@ class MyRunable implements Runnable {
 					money.setMonType("【超时任务】返金");
 					money.setMonTime(new SimpleDateFormat("yyyy-MM-dd")
 							.format(new Date()));
-					giveDao().save(money);
+					giveDaoInstance().save(money);
 					/** 返钱记录结束 */
 
 					/** 能力 **/
@@ -206,15 +218,17 @@ class MyRunable implements Runnable {
 
 						if (apply.getAppState() == 1) {// 任务的真实接受者才进行扣信誉
 							apply.setAppState(4);// 任务失败
-							giveDao().update(apply);
+							giveDaoInstance().update(apply);
 
 							Users beUser = apply.getAppBeUser();
 							// 获取任务接收者的power
-							List<?> list3 = giveDao().getObjectListByfield(
-									"Power", "powUser", beUser);
+							List<?> list3 = giveDaoInstance()
+									.getObjectListByfield("Power", "powUser",
+											beUser);
 							Power power;
 
-							if (list3.size() > 0) {
+							if (list3.size() > 0
+									&& list3.get(0) instanceof Power) {
 								power = (Power) list3.get(0);
 								power.setPowCredit(power.getPowCredit() - 4);// 任务过期失败，接受者默认减少4点信誉值
 							} else {
@@ -223,14 +237,14 @@ class MyRunable implements Runnable {
 								power.setPowUser(beUser);
 								power.setPowFast(0);
 							}
-							giveDao().saveOrUpdate(power);
+							giveDaoInstance().saveOrUpdate(power);
 
 							// 消息推送接受者
-							String phone = apply.getAppBeUser().getUsePhone();
-							if (JoinPushTool.getConnections()
-									.containsKey(phone))
+							String sPhone = apply.getAppBeUser().getUsePhone();
+							if (JoinPushTool.getConnections().containsKey(
+									sPhone))
 								JoinPushTool.broadcast(
-										"15" + task.getTasTitle(), phone);
+										"15" + task.getTasTitle(), sPhone);
 						}
 
 					}
@@ -241,8 +255,8 @@ class MyRunable implements Runnable {
 					Pay payOut;
 
 					// 获取任务发布者的pay
-					List<?> list1 = giveDao().getObjectListByfield("Pay",
-							new String[] { "payTime", "payUser" },
+					List<?> list1 = giveDaoInstance().getObjectListByfield(
+							"Pay", new String[] { "payTime", "payUser" },
 							new Object[] { sdf.format(new Date()), user });
 
 					if (list1.size() > 0) {
@@ -258,30 +272,30 @@ class MyRunable implements Runnable {
 						payOut.setPayOut(task.getTasPrice() * FALSE_TAX);
 						payOut.setPayUser(task.getTasUser());
 					}
-					giveDao().saveOrUpdate(payOut);
+					giveDaoInstance().saveOrUpdate(payOut);
 					/** 支付日志结束 **/
 
 					// 消息推送发布者
-					String phone = task.getTasUser().getUsePhone();
-					if (JoinPushTool.getConnections().containsKey(phone))
-						JoinPushTool
-								.broadcast("04" + task.getTasTitle(), phone);
+					String sPhone = task.getTasUser().getUsePhone();
+					if (JoinPushTool.getConnections().containsKey(sPhone))
+						JoinPushTool.broadcast("04" + task.getTasTitle(),
+								sPhone);
 
 				} else {
 					task.setTasState(6);
-					giveDao().update(task);
+					giveDaoInstance().update(task);
 				}
 			}
 		}
 	}
 
-	// 超过时间未通过任务自动打钱
+	/** 超过时间未通过任务自动打钱 */
 	private void doDB4Money() {
 
-		String oldTime = getDateBeforeNow(EXPIRE_DAY, "yyyy-MM-dd HH:mm:ss");
-		String hql = "where tasState=3 and tasFinishtime<='" + oldTime + "'";
-		List<?> list = giveDao().getObjectListBycond("Task", hql);
-		if (list.size() > 0) {
+		String sOldTime = getDateBeforeNow(EXPIRE_DAY, "yyyy-MM-dd HH:mm:ss");
+		String sHql = "where tasState=3 and tasFinishtime<='" + sOldTime + "'";
+		List<?> list = giveDaoInstance().getObjectListBycond("Task", sHql);
+		if (list.size() > 0 && list.get(0) instanceof Task) {
 			System.out.println("【超过时间未通过任务自动打钱】：本次给" + list.size() + "个用户自动打钱");
 			for (Object object : list) {
 				Task task = (Task) object;
@@ -292,13 +306,13 @@ class MyRunable implements Runnable {
 				Pay payOut;
 
 				// 获取任务发布者的pay
-				List<?> list1 = giveDao().getObjectListByfield(
+				List<?> list1 = giveDaoInstance().getObjectListByfield(
 						"Pay",
 						new String[] { "payTime", "payUser" },
 						new Object[] { sdf.format(new Date()),
 								task.getTasUser() });
 
-				if (list1.size() > 0) {
+				if (list1.size() > 0 && list.get(0) instanceof Pay) {
 					// 支出
 					payOut = (Pay) list1.get(0);
 					payOut.setPayOut(payOut.getPayOut() + task.getTasPrice()
@@ -311,20 +325,20 @@ class MyRunable implements Runnable {
 					payOut.setPayOut(task.getTasPrice() * 1.0);
 					payOut.setPayUser(task.getTasUser());
 				}
-				giveDao().saveOrUpdate(payOut);
+				giveDaoInstance().saveOrUpdate(payOut);
 				/** 支付日志结束 **/
 
 				for (Apply apply : set) {
 
 					if (apply.getAppState() == 1) {// 为该任务的实际接受者
 						apply.setAppState(3);// 任务成功
-						giveDao().update(apply);
+						giveDaoInstance().update(apply);
 
 						Users user = apply.getAppBeUser();
 						user.setUseRemain(user.getUseRemain()
 								+ task.getTasPrice() * (1 - SUCCESS_TAX)
 								/ set.size());// 存入余额
-						giveDao().update(user); // 操作了存入httpsession的user对象的useRemain属性，故拉取user的useRemain时应从数据库拉取
+						giveDaoInstance().update(user); // 操作了存入httpsession的user对象的useRemain属性，故拉取user的useRemain时应从数据库拉取
 
 						/** 打钱记录 */
 						Money money = new Money();
@@ -342,17 +356,17 @@ class MyRunable implements Runnable {
 						money.setMonType("【超时未通过任务】赏金");
 						money.setMonTime(new SimpleDateFormat("yyyy-MM-dd")
 								.format(new Date()));
-						giveDao().save(money);
+						giveDaoInstance().save(money);
 						/** 打钱记录结束 */
 
 						/** 支付日志 **/
 						// 获取任务收人者的pay
 						Pay payIn;
-						List<?> list2 = giveDao().getObjectListByfield("Pay",
-								new String[] { "payTime", "payUser" },
+						List<?> list2 = giveDaoInstance().getObjectListByfield(
+								"Pay", new String[] { "payTime", "payUser" },
 								new Object[] { sdf.format(new Date()), user });
 
-						if (list2.size() > 0) {
+						if (list2.size() > 0 && list2.get(0) instanceof Pay) {
 							// 收入
 							payIn = (Pay) list2.get(0);
 							if (task.getTasType().equals("团队"))
@@ -378,46 +392,49 @@ class MyRunable implements Runnable {
 										* (1 - SUCCESS_TAX));
 							payIn.setPayUser(user);
 						}
-						giveDao().saveOrUpdate(payIn);
+						giveDaoInstance().saveOrUpdate(payIn);
 						/** 支付日志结束 **/
 
 						// 消息推送接受者
-						String phone = apply.getAppBeUser().getUsePhone();
-						if (JoinPushTool.getConnections().containsKey(phone))
+						String sPhone = apply.getAppBeUser().getUsePhone();
+						if (JoinPushTool.getConnections().containsKey(sPhone))
 							JoinPushTool.broadcast("14" + task.getTasTitle(),
-									phone);
+									sPhone);
 					}
 				}
 				task.setTasState(4);// 任务成功
 				task.setTasEvaluate("任务进入审核阶段两天，任务自动完成");
-				giveDao().update(task);
+				giveDaoInstance().update(task);
 
 				// 消息推送发布者
-				String phone = task.getTasUser().getUsePhone();
-				if (JoinPushTool.getConnections().containsKey(phone))
-					JoinPushTool.broadcast("03" + task.getTasTitle(), phone);
+				String sPhone = task.getTasUser().getUsePhone();
+				if (JoinPushTool.getConnections().containsKey(sPhone))
+					JoinPushTool.broadcast("03" + task.getTasTitle(), sPhone);
 			}
 		}
 	}
 
 	/** 获取当前时间的N天前 */
-	private static String getDateBeforeNow(int beforeDay, String sfd) {
+	private static String getDateBeforeNow(int _beforeDay, String _sfd) {
 		GregorianCalendar calendar = new GregorianCalendar();
 		Date date = calendar.getTime();
 
-		SimpleDateFormat df = new SimpleDateFormat(sfd);
+		SimpleDateFormat df = new SimpleDateFormat(_sfd);
 
-		calendar.set(Calendar.DATE, calendar.get(Calendar.DATE) - beforeDay);
+		calendar.set(Calendar.DATE, calendar.get(Calendar.DATE) - _beforeDay);
 		date = calendar.getTime();
 
 		return df.format(date);
 	}
 
 	/** 获取Dao */
-	public ObjectDao giveDao() {
-		if (objectDao == null)
-			objectDao = new ObjectDaoImpl();
-		return objectDao;
+	public final ObjectDao giveDaoInstance() {
+		return objectDaoProvider.OBJECT_DAO;
+	}
+
+	/** 静态内部类方式实现懒汉式单例模式 */
+	private static class objectDaoProvider {
+		private static final ObjectDao OBJECT_DAO = new ObjectDaoImpl();
 	}
 
 }

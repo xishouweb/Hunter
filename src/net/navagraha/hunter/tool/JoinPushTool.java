@@ -21,33 +21,27 @@ import javax.websocket.Session;
 import javax.websocket.server.PathParam;
 import javax.websocket.server.ServerEndpoint;
 
-import net.navagraha.hunter.lib.GetHttpSessionConfigurator;
+import net.navagraha.hunter.dao.ObjectDao;
+import net.navagraha.hunter.dao.ObjectDaoImpl;
 import net.navagraha.hunter.pojo.About;
 import net.navagraha.hunter.pojo.Tag;
 import net.navagraha.hunter.pojo.Users;
-import net.navagraha.hunter.server.ObjectDao;
-import net.navagraha.hunter.server.impl.ObjectDaoImpl;
 
 /**
- * 功能：建立连接-前后台调用OnOpen,前后台可调用OnClose进行关闭,都会引发对方的OnClose方法
+ * 功能描述：建立连接-前后台调用OnOpen,前后台可调用OnClose进行关闭,都会引发对方的OnClose方法
  * 异常退出说明：前台页面关闭，先调用OnError,再调用OnClose；后台服务器关闭，前台只调用OnClose
  * 如果前台断网导致断开连接，后台服务器经过一小段时间会调用OnError
+ * 
+ * @author 冉椿林
+ *
+ * @since 1.0
  */
 @ServerEndpoint(value = "/websocket/{phone}/{version}", configurator = GetHttpSessionConfigurator.class)
 public class JoinPushTool {
 
 	private static Map<String, Session> connections = new ConcurrentHashMap<String, Session>();
 
-	private static ObjectDao objectDao = new ObjectDaoImpl();
-
 	private HttpSession httpSession;
-
-	/** 获取Dao */
-	public ObjectDao giveDao() {
-		if (objectDao == null)
-			objectDao = new ObjectDaoImpl();
-		return objectDao;
-	}
 
 	public static Map<String, Session> getConnections() {
 		return connections;
@@ -55,16 +49,19 @@ public class JoinPushTool {
 
 	/**
 	 * 功能：webSocket心跳测试
+	 * 
+	 * @return
 	 */
 	public static ScheduledFuture<?> startHeartBeat() {
 		ScheduledExecutorService service = Executors
 				.newSingleThreadScheduledExecutor();
 		return service.scheduleAtFixedRate(new Runnable() {
 			public void run() {
-				for (String key : connections.keySet()) {
-					if (!key.equals("01010000000"))// 心跳包不发送到浏览器
+				for (String sKey : connections.keySet()) {
+					if (!sKey.equals("01010000000"))// 心跳包不发送到浏览器
 						try {
-							connections.get(key).getBasicRemote().sendText("*");
+							connections.get(sKey).getBasicRemote()
+									.sendText("*");
 						} catch (IOException e) {
 						}
 				}
@@ -81,7 +78,7 @@ public class JoinPushTool {
 
 		httpSession = (HttpSession) config.getUserProperties().get(
 				HttpSession.class.getName());// 浏览器登录httpSession为空的（ws与httpSession浏览器登录问题②）
-		List<?> list = giveDao().getObjectListBycond("About",
+		List<?> list = giveDaoInstance().getObjectListBycond("About",
 				"order by aboId desc limit 1");// 取得当前版本
 		if (!version.equals("x.x.x")) {// 非管理员
 			if (list.size() > 0 && version != null) {
@@ -131,7 +128,10 @@ public class JoinPushTool {
 			quit();// 用户注销
 	}
 
-	// 用户注销
+	/**
+	 * 功能：用户注销
+	 *
+	 */
 	public void quit() {
 
 		// 计算登录时长
@@ -141,14 +141,12 @@ public class JoinPushTool {
 		} catch (Exception e) {
 			return;
 		}
-		long diff = 0;
+		long lDiff = 0;
 
 		if (object1 != null) {
 			String Logtime = object1.toString();
-			diff = getMinutesBetween(
-					new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
-							.format(new Date()),
-					Logtime);
+			lDiff = getMinutesBetween(new SimpleDateFormat(
+					"yyyy-MM-dd HH:mm:ss").format(new Date()), Logtime);
 		}
 
 		// 将登录时长加到数据库
@@ -156,17 +154,17 @@ public class JoinPushTool {
 		Users user = object2 != null ? (Users) object2 : null;
 
 		if (user != null) {
-			List<?> list = giveDao().getObjectListByfield("Tag", "tagUser",
-					user);
-			if (list.size() > 0) {
+			List<?> list = giveDaoInstance().getObjectListByfield("Tag",
+					"tagUser", user);
+			if (list.size() > 0 && list.get(0) instanceof Tag) {
 				Tag tag = (Tag) list.get(0);
 				tag.setTagTimeout(tag.getTagTimeout()
-						+ Integer.valueOf("" + diff));
-				giveDao().update(tag);
+						+ Integer.valueOf("" + lDiff));
+				giveDaoInstance().update(tag);
 			}
 			// 设置用户在线状态
 			user.setUseIsonline(0);
-			giveDao().update(user);
+			giveDaoInstance().update(user);
 		}
 		httpSession.invalidate();// 清空session
 	}
@@ -174,25 +172,25 @@ public class JoinPushTool {
 	/**
 	 * 功能：推送
 	 * 
-	 * @param msg
-	 * @param phone
+	 * @param _msg
+	 * @param _phone
 	 *            为空时进行全局推送
 	 */
-	public static void broadcast(String msg, String phone) {// 进行消息推送
-		if (phone != null) {
+	public static void broadcast(String _msg, String _phone) {// 进行消息推送
+		if (_phone != null) {
 			Session session = null;
 			try {
-				session = connections.get(phone);
+				session = connections.get(_phone);
 				synchronized (session) {
 					if (session.isOpen())
-						session.getBasicRemote().sendText(msg);
+						session.getBasicRemote().sendText(_msg);
 					else
-						connections.remove(phone);
+						connections.remove(_phone);
 				}
 			} catch (IOException e) {
 				System.err
 						.println("WebSocket Send Failed in Send message to client");
-				connections.remove(phone);
+				connections.remove(_phone);
 				try {
 					session.close();
 				} catch (IOException e1) {
@@ -206,7 +204,7 @@ public class JoinPushTool {
 					session = connections.get(key);
 					synchronized (session) {
 						if (session.isOpen())
-							session.getBasicRemote().sendText(msg);
+							session.getBasicRemote().sendText(_msg);
 						else
 							connections.remove(key);
 					}
@@ -227,20 +225,30 @@ public class JoinPushTool {
 	/**
 	 * 功能： 计算两个时间的差，单位：分
 	 * 
-	 * @param s1
-	 * @param s2
+	 * @param _s1
+	 * @param _s2
 	 * @return
 	 */
-	private static long getMinutesBetween(String s1, String s2) {
+	private static long getMinutesBetween(String _s1, String _s2) {
 
 		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss");
 		try {
-			Date dt1 = sdf.parse(s1);
-			Date dt2 = sdf.parse(s2);
+			Date dt1 = sdf.parse(_s1);
+			Date dt2 = sdf.parse(_s2);
 			return (dt1.getTime() - dt2.getTime()) / (60 * 1000);
 		} catch (Exception e) {
 			return 0;
 		}
+	}
+
+	/** 获取Dao */
+	public final ObjectDao giveDaoInstance() {
+		return objectDaoProvider.OBJECT_DAO;
+	}
+
+	/** 静态内部类方式实现懒汉式单例模式 */
+	private static class objectDaoProvider {
+		private static final ObjectDao OBJECT_DAO = new ObjectDaoImpl();
 	}
 
 }

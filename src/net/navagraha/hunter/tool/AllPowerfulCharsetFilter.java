@@ -24,15 +24,15 @@ import javax.servlet.http.HttpServletResponse;
  */
 public class AllPowerfulCharsetFilter implements Filter {
 
-	private String characterEncoding;
+	private String sCharacterEncoding;
 
 	public void doFilter(ServletRequest request, ServletResponse response,
 			FilterChain chain) throws IOException, ServletException {
 
 		if (((HttpServletRequest) request).getMethod().equalsIgnoreCase("POST")) {// 解决post乱码(常规过滤器)
 
-			request.setCharacterEncoding(characterEncoding);
-			response.setCharacterEncoding(characterEncoding);
+			request.setCharacterEncoding(sCharacterEncoding);
+			response.setCharacterEncoding(sCharacterEncoding);
 		}
 		// else {// 解决get乱码
 		// System.out.println("test0: " + request.getParameter("name"));
@@ -62,7 +62,7 @@ public class AllPowerfulCharsetFilter implements Filter {
 	}
 
 	public void init(FilterConfig config) throws ServletException {
-		characterEncoding = config.getInitParameter("encoding");
+		sCharacterEncoding = config.getInitParameter("encoding");
 	}
 
 	public void destroy() {

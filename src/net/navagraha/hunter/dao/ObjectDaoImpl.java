@@ -1,33 +1,38 @@
-package net.navagraha.hunter.server.impl;
+package net.navagraha.hunter.dao;
 
 import java.util.ArrayList;
 import java.util.List;
-
-import net.navagraha.hunter.server.HibernateSessionFactory;
-import net.navagraha.hunter.server.ObjectDao;
 
 import org.hibernate.Query;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;
 
+/**
+ * 功能描述：持久化操作实现类
+ * 
+ * @author 冉椿林
+ *
+ */
 public class ObjectDaoImpl implements ObjectDao {
 
 	private SessionFactory sessionFactory = HibernateSessionFactory
-			.getSessionFactory();
-	private Session session;
-	private Transaction tran;
+			.getSessionFactory();// session工厂
+
+	private Session session;// hibernate_session
+
+	private Transaction tran;// 事务
 
 	public Session getSession() {
 		return session;
 	}
 
 	// 通过id查找对象
-	public Object getObjectById(Class cls, int id) {
+	public Object getObjectById(Class _cls, int _id) {
 		try {
 			session = sessionFactory.openSession();
 			tran = session.beginTransaction();
-			Object obj = session.get(cls, id);
+			Object obj = session.get(_cls, _id);
 			tran.commit();
 			return obj;
 		} catch (Exception e) {
@@ -39,11 +44,11 @@ public class ObjectDaoImpl implements ObjectDao {
 	}
 
 	// 保存或修改对象
-	public void saveOrUpdate(Object obj) {
+	public void saveOrUpdate(Object _obj) {
 		try {
 			session = sessionFactory.openSession();
 			tran = session.beginTransaction();
-			session.saveOrUpdate(obj);
+			session.saveOrUpdate(_obj);
 			tran.commit();
 		} catch (Exception e) {
 			tran.rollback();
@@ -54,11 +59,11 @@ public class ObjectDaoImpl implements ObjectDao {
 	}
 
 	// 修改对象
-	public void update(Object obj) {
+	public void update(Object _obj) {
 		try {
 			session = sessionFactory.openSession();
 			tran = session.beginTransaction();
-			session.update(obj);
+			session.update(_obj);
 			tran.commit();
 		} catch (Exception e) {
 			tran.rollback();
@@ -69,11 +74,11 @@ public class ObjectDaoImpl implements ObjectDao {
 	}
 
 	// 根据HQL执行增删改语句
-	public void executeUpdate(String hql) {
+	public void executeUpdate(String _sHql) {
 		try {
 			session = sessionFactory.openSession();
 			tran = session.beginTransaction();
-			Query query = session.createQuery(hql);
+			Query query = session.createQuery(_sHql);
 			query.executeUpdate();
 			tran.commit();
 		} catch (Exception e) {
@@ -85,11 +90,11 @@ public class ObjectDaoImpl implements ObjectDao {
 	}
 
 	// 添加对象
-	public void save(Object obj) {
+	public void save(Object _obj) {
 		try {
 			session = sessionFactory.openSession();
 			tran = session.beginTransaction();
-			session.save(obj);
+			session.save(_obj);
 			tran.commit();
 		} catch (Exception e) {
 			tran.rollback();
@@ -100,11 +105,11 @@ public class ObjectDaoImpl implements ObjectDao {
 	}
 
 	// 删除对象
-	public void delete(Object obj) {
+	public void delete(Object _obj) {
 		try {
 			session = sessionFactory.openSession();
 			tran = session.beginTransaction();
-			session.delete(obj);
+			session.delete(_obj);
 			tran.commit();
 		} catch (Exception e) {
 			tran.rollback();
@@ -115,11 +120,11 @@ public class ObjectDaoImpl implements ObjectDao {
 	}
 
 	// 删除对象通过id
-	public void delete(Class cls, int id) {
+	public void delete(Class _cls, int _id) {
 		try {
 			session = sessionFactory.openSession();
 			tran = session.beginTransaction();
-			session.delete(session.load(cls, id));
+			session.delete(session.load(_cls, _id));
 			tran.commit();
 		} catch (Exception e) {
 			tran.rollback();
@@ -130,17 +135,17 @@ public class ObjectDaoImpl implements ObjectDao {
 	}
 
 	// 根据一个字段获取对象列表
-	public List<?> getObjectListByfield(String table, String dbfield,
-			Object field) {
+	public List<?> getObjectListByfield(String _table, String _dbfield,
+			Object _field) {
 		try {
 			session = sessionFactory.openSession();
 			tran = session.beginTransaction();
-			String hql = "from " + table + " where " + dbfield + "=?";
-			if (table.equals("Users")) {
-				hql += " and useIscompany<>2";
+			String sHql = "from " + _table + " where " + _dbfield + "=?";
+			if (_table.equals("Users")) {
+				sHql += " and useIscompany<>2";
 			}
-			Query query = session.createQuery(hql);
-			query.setParameter(0, field);
+			Query query = session.createQuery(sHql);
+			query.setParameter(0, _field);
 			query.setCacheable(true);// 使用二级缓存
 			List<?> list = query.list();
 			tran.commit();
@@ -154,15 +159,15 @@ public class ObjectDaoImpl implements ObjectDao {
 	}
 
 	// 根据一个字段获取对象列表(激活使用)
-	public List<?> getObjectListByfieldInActivate(String table, String dbfield,
-			Object field) {
+	public List<?> getObjectListByfieldInActivate(String _table,
+			String _dbfield, Object _field) {
 		try {
 			session = sessionFactory.openSession();
 			tran = session.beginTransaction();
-			String hql = "from " + table + " where " + dbfield + "=?";
+			String sHql = "from " + _table + " where " + _dbfield + "=?";
 
-			Query query = session.createQuery(hql);
-			query.setParameter(0, field);
+			Query query = session.createQuery(sHql);
+			query.setParameter(0, _field);
 			query.setCacheable(true);
 			List<?> list = query.list();
 			tran.commit();
@@ -176,23 +181,23 @@ public class ObjectDaoImpl implements ObjectDao {
 	}
 
 	// 根据一组字段获取对象列表（参数数组应小于3，2以上为写相应代码）
-	public List<?> getObjectListByfield(String table, String dbfields[],
+	public List<?> getObjectListByfield(String _table, String dbfields[],
 			Object fields[]) {
-		String hql = "from " + table + " where ";
+		String sHql = "from " + _table + " where ";
 		for (int i = 0; i < dbfields.length; i++) {
 			if (i == fields.length - 1) {
-				hql += dbfields[i] + "=?";
+				sHql += dbfields[i] + "=?";
 				continue;
 			}
-			hql += dbfields[i] + "=? and ";
+			sHql += dbfields[i] + "=? and ";
 		}
-		if (table.equals("Users")) {
-			hql += " and useIscompany<>2";
+		if (_table.equals("Users")) {
+			sHql += " and useIscompany<>2";
 		}
 		try {
 			session = sessionFactory.openSession();
 			tran = session.beginTransaction();
-			Query query = session.createQuery(hql);
+			Query query = session.createQuery(sHql);
 			for (int i = 0; i < dbfields.length; i++) {
 				query.setParameter(i, fields[i]);
 			}
@@ -209,11 +214,11 @@ public class ObjectDaoImpl implements ObjectDao {
 	}
 
 	// 根据搜索条件获得对象数
-	public int getObjectSizeBycond(String hql, List<?> list) {
+	public int getObjectSizeBycond(String _sHql, List<?> list) {
 		try {
 			session = sessionFactory.openSession();
 			tran = session.beginTransaction();
-			Query query = session.createQuery(hql);
+			Query query = session.createQuery(_sHql);
 			query.setParameterList("list", list);
 			int i = ((Long) query.iterate().next()).intValue();
 			tran.commit();
@@ -227,11 +232,11 @@ public class ObjectDaoImpl implements ObjectDao {
 	}
 
 	// 根据搜索条件获得对象数
-	public int getObjectSizeBycond(String hql) {
+	public int getObjectSizeBycond(String _sHql) {
 		try {
 			session = sessionFactory.openSession();
 			tran = session.beginTransaction();
-			Query query = session.createQuery(hql);
+			Query query = session.createQuery(_sHql);
 			int i = (Long.valueOf(query.iterate().next().toString()))
 					.intValue();
 			tran.commit();
@@ -245,12 +250,12 @@ public class ObjectDaoImpl implements ObjectDao {
 	}
 
 	// 根据搜索条件获得对象数量(给定返回个数)
-	public List<?> getSomeObjectListBycond(String hql, int limit) {
+	public List<?> getSomeObjectListBycond(String _sHql, int _limit) {
 		try {
 			session = sessionFactory.openSession();
 			tran = session.beginTransaction();
-			Query query = session.createQuery(hql);
-			query.setMaxResults(limit);
+			Query query = session.createQuery(_sHql);
+			query.setMaxResults(_limit);
 			List<?> list = query.list();
 			tran.commit();
 			return list;
@@ -263,22 +268,22 @@ public class ObjectDaoImpl implements ObjectDao {
 	}
 
 	// 根据搜索条件获得对象列表
-	public List<?> getObjectListBycond(String table, String cond) {
-		String hql = "from " + table + " " + cond;
-		if (table.equals("Users")) {
-			hql += " and useIscompany<>2";
+	public List<?> getObjectListBycond(String _table, String _cond) {
+		String sHql = "from " + _table + " " + _cond;
+		if (_table.equals("Users")) {
+			sHql += " and useIscompany<>2";
 		}
-		return getObjectListBycond(hql);
+		return getObjectListBycond(sHql);
 
 	}
 
 	// 根据搜索条件获得对象列表
-	public List<?> getObjectListBycond(String cond) {
-		String hql = cond;
+	public List<?> getObjectListBycond(String _cond) {
+		String sHql = _cond;
 		try {
 			session = sessionFactory.openSession();
 			tran = session.beginTransaction();
-			Query query = session.createQuery(hql);
+			Query query = session.createQuery(sHql);
 			query.setCacheable(true);
 			List<?> list = query.list();
 			tran.commit();
@@ -292,14 +297,14 @@ public class ObjectDaoImpl implements ObjectDao {
 	}
 
 	// 登录验证
-	public List<?> check4List(String table, String usePhone, String password) {
-		String hql = "from " + table
+	public List<?> check4List(String _table, String _usePhone, String _password) {
+		String sHql = "from " + _table
 				+ " where usePhone = ? and usePwd = ? and useIscompany<>2";
 		try {
 			session = sessionFactory.openSession();
 			tran = session.beginTransaction();
-			Query query = session.createQuery(hql).setString(0, usePhone)
-					.setString(1, password);
+			Query query = session.createQuery(sHql).setString(0, _usePhone)
+					.setString(1, _password);
 			query.setCacheable(true);
 			List<?> list = query.list();
 			tran.commit();
@@ -313,17 +318,17 @@ public class ObjectDaoImpl implements ObjectDao {
 	}
 
 	// 分页显示
-	public List<?> pageList(String table, int first, int perPageRow) {
+	public List<?> pageList(String _table, int _first, int _perPageRow) {
 		try {
 			session = sessionFactory.openSession();
 			tran = session.beginTransaction();
-			String hql = "from " + table;
-			if (table.equals("Users")) {
-				hql += "where useIscompany<>2";
+			String sHql = "from " + _table;
+			if (_table.equals("Users")) {
+				sHql += "where useIscompany<>2";
 			}
-			Query query = session.createQuery(hql);
-			query.setFirstResult(first * perPageRow);
-			query.setMaxResults(perPageRow);
+			Query query = session.createQuery(sHql);
+			query.setFirstResult(_first * _perPageRow);
+			query.setMaxResults(_perPageRow);
 			List<?> list = query.list();
 			tran.commit();
 			return list;
@@ -336,23 +341,22 @@ public class ObjectDaoImpl implements ObjectDao {
 	}
 
 	// 分页显示(含条件，需含where关键字)
-	public List<?> pageListWithCond(String table, int first, int perPageRow,
-			String cond) {
+	public List<?> pageListWithCond(String _table, int _first, int _perPageRow,
+			String _cond) {
 		try {
 			session = sessionFactory.openSession();
 			tran = session.beginTransaction();
-			String hql = "from " + table + " " + cond;
-			if (table.equals("Users")) {
-				hql += " and useIscompany<>2";
+			String sHql = "from " + _table + " " + _cond;
+			if (_table.equals("Users")) {
+				sHql += " and useIscompany<>2";
 			}
-			Query query = session.createQuery(hql);
-			query.setFirstResult(first * perPageRow);
-			query.setMaxResults(perPageRow);
+			Query query = session.createQuery(sHql);
+			query.setFirstResult(_first * _perPageRow);
+			query.setMaxResults(_perPageRow);
 			List<?> list = query.list();
 			tran.commit();
 			return list;
 		} catch (Exception e) {
-			// e.printStackTrace();
 			return new ArrayList<Object>();
 		} finally {
 			if (session.isOpen())
@@ -361,18 +365,18 @@ public class ObjectDaoImpl implements ObjectDao {
 	}
 
 	// 分页显示(含条件，需含where关键字)
-	public List<?> pageListWithCond(String table, int first, int perPageRow,
-			String cond, List<?> list) {
+	public List<?> pageListWithCond(String _table, int _first, int _perPageRow,
+			String _cond, List<?> list) {
 		try {
 			session = sessionFactory.openSession();
 			tran = session.beginTransaction();
-			String hql = "from " + table + " " + cond;
-			if (table.equals("Users")) {
-				hql += " and useIscompany<>2";
+			String sHql = "from " + _table + " " + _cond;
+			if (_table.equals("Users")) {
+				sHql += " and useIscompany<>2";
 			}
-			Query query = session.createQuery(hql);
-			query.setFirstResult(first * perPageRow);
-			query.setMaxResults(perPageRow);
+			Query query = session.createQuery(sHql);
+			query.setFirstResult(_first * _perPageRow);
+			query.setMaxResults(_perPageRow);
 			query.setParameterList("list", list);
 			List<?> list1 = query.list();
 			tran.commit();

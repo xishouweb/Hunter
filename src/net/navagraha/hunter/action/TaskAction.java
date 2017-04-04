@@ -9,6 +9,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.struts2.ServletActionContext;
+
 import net.navagraha.hunter.dao.ObjectDaoImpl;
 import net.navagraha.hunter.pojo.Apply;
 import net.navagraha.hunter.pojo.Money;
@@ -24,8 +26,6 @@ import net.navagraha.hunter.tool.PropertyUtil;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 import net.sf.json.JsonConfig;
-
-import org.apache.struts2.ServletActionContext;
 
 /**
  * 功能描述：任务Action
@@ -48,8 +48,7 @@ public final class TaskAction extends AbstractObjAction {
 	private String tasEvaluate;// 评价
 	private Integer tasCredit;// 任务评分
 
-	private static PropertyUtil propertyUtil = new PropertyUtil(
-			"cons.properties");// 初始化参数配置文件
+	private static PropertyUtil propertyUtil = new PropertyUtil("cons.properties");// 初始化参数配置文件
 	private static int HOME_PerPageRow;// 任务大厅每页显示任务数量
 	private static int LOG_PerPageRow;// 任务日志每页显示任务数量
 	private static int PERSON_PerPageRow;// 任务发布每页显示任务数量
@@ -62,18 +61,12 @@ public final class TaskAction extends AbstractObjAction {
 
 	static {
 		try {
-			HOME_PerPageRow = Integer.parseInt(propertyUtil
-					.getPropertyValue("HOME_PerPageRow"));
-			LOG_PerPageRow = Integer.parseInt(propertyUtil
-					.getPropertyValue("LOG_PerPageRow"));
-			PERSON_PerPageRow = Integer.parseInt(propertyUtil
-					.getPropertyValue("PERSON_PerPageRow"));
-			RuleReceive = Integer.parseInt(propertyUtil
-					.getPropertyValue("RuleReceive"));
-			SUCCESS_TAX = Double.parseDouble(propertyUtil
-					.getPropertyValue("SUCCESS_TAX"));
-			FALSE_TAX = Double.parseDouble(propertyUtil
-					.getPropertyValue("FALSE_TAX"));
+			HOME_PerPageRow = Integer.parseInt(propertyUtil.getPropertyValue("HOME_PerPageRow"));
+			LOG_PerPageRow = Integer.parseInt(propertyUtil.getPropertyValue("LOG_PerPageRow"));
+			PERSON_PerPageRow = Integer.parseInt(propertyUtil.getPropertyValue("PERSON_PerPageRow"));
+			RuleReceive = Integer.parseInt(propertyUtil.getPropertyValue("RuleReceive"));
+			SUCCESS_TAX = Double.parseDouble(propertyUtil.getPropertyValue("SUCCESS_TAX"));
+			FALSE_TAX = Double.parseDouble(propertyUtil.getPropertyValue("FALSE_TAX"));
 		} catch (NumberFormatException e) {
 			System.err.println("异常来自项目Hunter:\n" + e.getMessage());
 		}
@@ -97,12 +90,10 @@ public final class TaskAction extends AbstractObjAction {
 	 * @return
 	 */
 	public String hasAlipay() {
-		Object object = ServletActionContext.getRequest().getSession()
-				.getAttribute("Users");// 将登陆用户取出
+		Object object = ServletActionContext.getRequest().getSession().getAttribute("Users");// 将登陆用户取出
 		Users user = object != null ? (Users) object : null;
 		if (user != null) {
-			if ("".equals(user.getUseAlipay()) || user.getUseAlipay() == null
-					|| user.getUseName() == null
+			if ("".equals(user.getUseAlipay()) || user.getUseAlipay() == null || user.getUseName() == null
 					|| "".equals(user.getUseName())) {// 判断支付宝账户是否为空,equals比较时：字符串放前面，变量放后面避免空指针异常
 				setsCode("21");
 				return "success";
@@ -121,8 +112,7 @@ public final class TaskAction extends AbstractObjAction {
 	@SuppressWarnings("deprecation")
 	public String publishTask() {
 
-		Object object = ServletActionContext.getRequest().getSession()
-				.getAttribute("Users");// 将登陆用户取出
+		Object object = ServletActionContext.getRequest().getSession().getAttribute("Users");// 将登陆用户取出
 		Users user = object != null ? (Users) object : null;
 
 		Task task = null;
@@ -140,18 +130,14 @@ public final class TaskAction extends AbstractObjAction {
 			Date date = new Date();
 			task.setTasTime(sdf.format(date));
 
-			Object str = ServletActionContext.getRequest().getSession()
-					.getAttribute("ImgPath");// 从session上获取刚刚上传图片的路径
+			Object str = ServletActionContext.getRequest().getSession().getAttribute("ImgPath");// 从session上获取刚刚上传图片的路径
 			if (str != null) {// 不为空
 				task.setTasImg(str.toString());
-				ServletActionContext.getRequest().getSession()
-						.setAttribute("ImgPath", null);// 重置图片路径
+				ServletActionContext.getRequest().getSession().setAttribute("ImgPath", null);// 重置图片路径
 			}
 			if ("加急个人".equals(tasType)) {// 加急个人任务
-				tasTimeout = tasTimeout.split(":")[0].length() < 2 ? "0"
-						+ tasTimeout : tasTimeout;// 解决某些机型使用时间控件传入的小时为12小时制
-				task.setTasTimeout(sdf.format(date).substring(0, 11)
-						+ tasTimeout + ":00");// 重组时间并添加秒
+				tasTimeout = tasTimeout.split(":")[0].length() < 2 ? "0" + tasTimeout : tasTimeout;// 解决某些机型使用时间控件传入的小时为12小时制
+				task.setTasTimeout(sdf.format(date).substring(0, 11) + tasTimeout + ":00");// 重组时间并添加秒
 			}
 			if ("个人".equals(tasType)) {// 个人任务
 				date.setHours(date.getHours() + 48);// 默认显示2天后失效
@@ -177,15 +163,13 @@ public final class TaskAction extends AbstractObjAction {
 			money.setMonAlipay(user.getUseAlipay());// 设置资金对象支付宝
 
 			money.setMonName(user.getUseName());// 设置资金对象
-			money.setMonNo(new SimpleDateFormat("yyyyMMddHHmmssSSS")
-					.format(new Date())
+			money.setMonNo(new SimpleDateFormat("yyyyMMddHHmmssSSS").format(new Date())
 					+ user.getUseSno().substring(user.getUseSno().length() - 4));// 为保证流水号不重复，使用时间戳+学号
 			money.setMonPay(tasPrice);// 设置赏金
 			money.setMonState(4);// 付钱（不显示）
 			money.setMonPhone(user.getUsePhone());// 设置联系方式
 			money.setMonComment("/");// 设置备注为“/”
-			money.setMonTime(new SimpleDateFormat("yyyy-MM-dd")
-					.format(new Date()));// 设置时间
+			money.setMonTime(new SimpleDateFormat("yyyy-MM-dd").format(new Date()));// 设置时间
 
 			/* 目前统一使用支付宝支付 */
 			// if (payType != null && payType == 0) {// 余额支付
@@ -198,12 +182,10 @@ public final class TaskAction extends AbstractObjAction {
 
 			task.setTasUser(user);
 			giveDaoInstance().update(user);// 更新用户
-			ServletActionContext.getRequest().getSession()
-					.setAttribute("Users", user);// 将更新用户存入session
+			ServletActionContext.getRequest().getSession().setAttribute("Users", user);// 将更新用户存入session
 			giveDaoInstance().save(task);// 持久化任务
 			setsCode("1");
-		} else
-			setsCode("0");
+		}
 
 		return "success";
 	}
@@ -217,11 +199,9 @@ public final class TaskAction extends AbstractObjAction {
 	public String receiveTask() throws MyHunterException {
 
 		Object object = giveDaoInstance().getObjectById(Task.class, tasId);
-		Task task = object != null && object instanceof Task ? (Task) object
-				: null;// 拿取数据
+		Task task = object != null && object instanceof Task ? (Task) object : null;// 拿取数据
 
-		Object object1 = ServletActionContext.getRequest().getSession()
-				.getAttribute("Users");// 将登陆用户取出
+		Object object1 = ServletActionContext.getRequest().getSession().getAttribute("Users");// 将登陆用户取出
 		Users user = object1 != null ? (Users) object1 : null;
 
 		if (task != null && user != null) {// 非空判断
@@ -232,28 +212,23 @@ public final class TaskAction extends AbstractObjAction {
 			}
 
 			for (Apply apply : task.getTasApplies()) {// set集合使用foreach遍历，set本身取值也是iterator，无法使用for遍历提升效率
-				if (apply.getAppBeUser().getUseId().intValue() == user
-						.getUseId().intValue()) {// 已申请,不必重复申请
+				if (apply.getAppBeUser().getUseId().intValue() == user.getUseId().intValue()) {// 已申请,不必重复申请
 					setsCode("19");
 					return "success";
 				}
 			}
 
 			// 申请与进行的任务已达到上限
-			String sCond = "where appBeUser=" + user.getUseId()
-					+ " and appState in(0,1) order by appId desc";
-			int iSize = giveDaoInstance().getObjectSizeBycond(
-					"select count(*) from Apply " + sCond);// 已接受任务人数
+			String sCond = "where appBeUser=" + user.getUseId() + " and appState in(0,1) order by appId desc";
+			int iSize = giveDaoInstance().getObjectSizeBycond("select count(*) from Apply " + sCond);// 已接受任务人数
 			if (iSize > RuleReceive) {
 				setsCode("24");// 申请+进行任务数已达上限
 				return "success";
 			}
 
 			// 记录tag
-			List<?> list = giveDaoInstance().getObjectListByfield("Tag",
-					"tagUser", user);
-			Tag tag = list.size() > 0 && list.get(0) instanceof Tag ? (Tag) list
-					.get(0) : null;
+			List<?> list = giveDaoInstance().getObjectListByfield("Tag", "tagUser", user);
+			Tag tag = list.size() > 0 && list.get(0) instanceof Tag ? (Tag) list.get(0) : null;
 
 			if (tag != null) {
 				// 设置接收某性别的任务发布者任务次数
@@ -294,8 +269,7 @@ public final class TaskAction extends AbstractObjAction {
 			Apply apply = new Apply();// 新建一个申请
 			apply.setAppBeUser(user);
 			apply.setAppTask(task);
-			apply.setAppTime(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
-					.format(new Date()));
+			apply.setAppTime(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date()));
 
 			if ("加急个人".equals(task.getTasType())) {// 加急任务
 				if (task.getTasState() == 0) {// 任务可接
@@ -315,14 +289,12 @@ public final class TaskAction extends AbstractObjAction {
 					// 消息推送到接受者
 					String sPhone = apply.getAppBeUser().getUsePhone();
 					if (JoinPushTool.getConnections().containsKey(sPhone))// 如果接受者存在于与服务器的连接中
-						JoinPushTool.broadcast("12" + task.getTasTitle(),
-								sPhone);// 进行推送
+						JoinPushTool.broadcast("12" + task.getTasTitle(), sPhone);// 进行推送
 
 					// 消息推送到发布者
 					sPhone = task.getTasUser().getUsePhone();
 					if (JoinPushTool.getConnections().containsKey(sPhone))// 如果发布者存在于与服务器的连接中
-						JoinPushTool.broadcast("01" + task.getTasTitle(),
-								sPhone);
+						JoinPushTool.broadcast("01" + task.getTasTitle(), sPhone);
 
 					return "success";
 				} else {
@@ -343,14 +315,12 @@ public final class TaskAction extends AbstractObjAction {
 					// 消息推送到接受者
 					String sPhone = apply.getAppBeUser().getUsePhone();
 					if (JoinPushTool.getConnections().containsKey(sPhone))// 如果接受者存在于与服务器的连接中
-						JoinPushTool.broadcast("10" + task.getTasTitle(),
-								sPhone);
+						JoinPushTool.broadcast("10" + task.getTasTitle(), sPhone);
 
 					// 消息推送到发布者
 					sPhone = task.getTasUser().getUsePhone();
 					if (JoinPushTool.getConnections().containsKey(sPhone))// 如果发布者存在于与服务器的连接中
-						JoinPushTool.broadcast("00" + task.getTasTitle(),
-								sPhone);
+						JoinPushTool.broadcast("00" + task.getTasTitle(), sPhone);
 
 					return "success";
 				} else {
@@ -372,8 +342,7 @@ public final class TaskAction extends AbstractObjAction {
 	public String backReceiveTask() {
 
 		Object object = giveDaoInstance().getObjectById(Apply.class, appId);// 取得申请
-		Apply apply = object != null && object instanceof Apply ? (Apply) object
-				: null;
+		Apply apply = object != null && object instanceof Apply ? (Apply) object : null;
 		if (apply != null && apply.getAppState() == 0) {// 是否处于可取消状态
 			giveDaoInstance().delete(apply);// 删除申请
 			setsCode("1");// 操作成功
@@ -391,8 +360,7 @@ public final class TaskAction extends AbstractObjAction {
 	 */
 	public String backTask() {
 		Object object = giveDaoInstance().getObjectById(Task.class, tasId);// 得到任务
-		Task task = object != null && object instanceof Task ? (Task) object
-				: null;
+		Task task = object != null && object instanceof Task ? (Task) object : null;
 
 		if (task != null && task.getTasState() == 0) {// 任务属于发布状态（可取消状态）
 
@@ -402,27 +370,23 @@ public final class TaskAction extends AbstractObjAction {
 
 			// 将发布任务的赏金扣取服务费后存入余额
 			Users user = task.getTasUser();
-			user.setUseRemain(user.getUseRemain() + task.getTasPrice()
-					* (1 - FALSE_TAX));// 存入余额
+			user.setUseRemain(user.getUseRemain() + task.getTasPrice() * (1 - FALSE_TAX));// 存入余额
 			giveDaoInstance().update(user);
 			// 将更新用户存入session
-			ServletActionContext.getRequest().getSession()
-					.setAttribute("Users", user);
+			ServletActionContext.getRequest().getSession().setAttribute("Users", user);
 
 			/** 返钱记录 */
 			Money money = new Money();
 			money.setMonAlipay(user.getUseAlipay());
 			money.setMonComment("/");
 			money.setMonName(user.getUseName());
-			money.setMonNo(new SimpleDateFormat("yyyyMMddHHmmssSSS")
-					.format(new Date())
+			money.setMonNo(new SimpleDateFormat("yyyyMMddHHmmssSSS").format(new Date())
 					+ user.getUseSno().substring(user.getUseSno().length() - 4));
 			money.setMonPay(task.getTasPrice() * (1 - FALSE_TAX));// 需打款：扣取服务费的赏金
 			money.setMonState(3);// 打钱（不显示）
 			money.setMonPhone(user.getUsePhone());
 			money.setMonType("【撤销任务】返金");
-			money.setMonTime(new SimpleDateFormat("yyyy-MM-dd")
-					.format(new Date()));
+			money.setMonTime(new SimpleDateFormat("yyyy-MM-dd").format(new Date()));
 			giveDaoInstance().save(money);
 			/** 返钱记录结束 */
 
@@ -431,15 +395,13 @@ public final class TaskAction extends AbstractObjAction {
 			Pay payOut;
 
 			// 获取任务发布者的pay
-			List<?> list1 = giveDaoInstance().getObjectListByfield("Pay",
-					new String[] { "payTime", "payUser" },
+			List<?> list1 = giveDaoInstance().getObjectListByfield("Pay", new String[] { "payTime", "payUser" },
 					new Object[] { sdf.format(new Date()), user });// 根据条件查询对象，String数组对应数据库字段，Object数组对应检索条件
 
 			if (list1.size() > 0) {// 存在当月记录
 				// 支出
 				payOut = (Pay) list1.get(0);
-				payOut.setPayOut(payOut.getPayOut() + task.getTasPrice()
-						* FALSE_TAX);// 支出+该次任务发布的服务费
+				payOut.setPayOut(payOut.getPayOut() + task.getTasPrice() * FALSE_TAX);// 支出+该次任务发布的服务费
 			} else {// 不存在当月记录，新建并初始化
 				// 支出
 				payOut = new Pay();
@@ -474,8 +436,7 @@ public final class TaskAction extends AbstractObjAction {
 			return "success";
 		}
 		Object object = giveDaoInstance().getObjectById(Apply.class, appId);// 得到申请
-		Apply apply = object != null && object instanceof Apply ? (Apply) object
-				: null;
+		Apply apply = object != null && object instanceof Apply ? (Apply) object : null;
 
 		if (apply != null) {
 			Task task = apply.getAppTask();// 得到申请的任务
@@ -485,14 +446,12 @@ public final class TaskAction extends AbstractObjAction {
 				Users user = apply.getAppBeUser();
 				user.setUseAcceptnum(user.getUseAcceptnum() + 1);// 接受者任务接受数+1
 				giveDaoInstance().update(user);
-				ServletActionContext.getRequest().getSession()
-						.setAttribute("Users", user);// 将更新用户存入session
+				ServletActionContext.getRequest().getSession().setAttribute("Users", user);// 将更新用户存入session
 
 				if ("个人".equals(task.getTasType())) {// 个人任务
 
 					// 其他申请自动设置为不通过
-					List<?> appList = giveDaoInstance().getObjectListByfield(
-							"Apply", "appTask", task);
+					List<?> appList = giveDaoInstance().getObjectListByfield("Apply", "appTask", task);
 					for (int i = 0, iSize = appList.size(); i < iSize; i++) {
 						Object object2 = appList.get(i);
 						Apply apply2 = (Apply) object2;
@@ -502,21 +461,14 @@ public final class TaskAction extends AbstractObjAction {
 
 							// 不通过消息推送到接受者
 							String sPhone = apply2.getAppBeUser().getUsePhone();
-							if (JoinPushTool.getConnections().containsKey(
-									sPhone))
-								JoinPushTool.broadcast(
-										"11" + task.getTasTitle(), sPhone);
+							if (JoinPushTool.getConnections().containsKey(sPhone))
+								JoinPushTool.broadcast("11" + task.getTasTitle(), sPhone);
 						} else {// 是需要通过的appId,通过并消息推送到接受者
-							if (!JoinPushTool.getConnections().containsKey(
-									apply2.getAppBeUser().getUsePhone())) // 用户不在线，发送短信
-								PhoneCodeTool.send(apply2.getAppBeUser()
-										.getUsePhone(), task.getTasTitle(),
-										"apply");
+							if (!JoinPushTool.getConnections().containsKey(apply2.getAppBeUser().getUsePhone())) // 用户不在线，发送短信
+								PhoneCodeTool.send(apply2.getAppBeUser().getUsePhone(), task.getTasTitle(), "apply");
 							else {// 用户在线，消息推送通知
-								String sPhone = apply2.getAppBeUser()
-										.getUsePhone();
-								JoinPushTool.broadcast(
-										"12" + task.getTasTitle(), sPhone);
+								String sPhone = apply2.getAppBeUser().getUsePhone();
+								JoinPushTool.broadcast("12" + task.getTasTitle(), sPhone);
 							}
 						}
 					}
@@ -534,13 +486,11 @@ public final class TaskAction extends AbstractObjAction {
 					// 消息推送发布者
 					String sPhone = task.getTasUser().getUsePhone();
 					if (JoinPushTool.getConnections().containsKey(sPhone))
-						JoinPushTool.broadcast("01" + task.getTasTitle(),
-								sPhone);
+						JoinPushTool.broadcast("01" + task.getTasTitle(), sPhone);
 
 					return "success";
 				} else {// 团队任务
-					if (task.getTasReceivenum().intValue() == task
-							.getTasRulenum().intValue() - 1) {// 任务人数已达齐，开始进行
+					if (task.getTasReceivenum().intValue() == task.getTasRulenum().intValue() - 1) {// 任务人数已达齐，开始进行
 						apply.setAppState(1);// 通过
 						giveDaoInstance().update(apply);
 
@@ -553,15 +503,13 @@ public final class TaskAction extends AbstractObjAction {
 						giveDaoInstance().update(task);
 
 						// 其他申请自动设置为不通过
-						List<?> appList = giveDaoInstance()
-								.getObjectListByfield("Apply", "appTask", task);// 获取所有的申请
+						List<?> appList = giveDaoInstance().getObjectListByfield("Apply", "appTask", task);// 获取所有的申请
 						for (int i = 0, iSize = appList.size(); i < iSize; i++) {
 							Object object2 = appList.get(i);
 							Apply apply2 = (Apply) object2;
 							boolean bIn = false;
 							for (Apply apply3 : set) {// 遍历已通过的申请
-								if (apply2.getAppId().intValue() == apply3
-										.getAppId().intValue())
+								if (apply2.getAppId().intValue() == apply3.getAppId().intValue())
 									bIn = true;// 该申请是否已经存在于里面，标志位为TRUE
 
 								if (!bIn) {// 不通过的申请
@@ -569,27 +517,16 @@ public final class TaskAction extends AbstractObjAction {
 									giveDaoInstance().update(apply2);
 
 									// 不通过 消息推送接受者
-									String sPhone = apply2.getAppBeUser()
-											.getUsePhone();
-									if (JoinPushTool.getConnections()
-											.containsKey(sPhone))
-										JoinPushTool.broadcast(
-												"11" + task.getTasTitle(),
-												sPhone);
+									String sPhone = apply2.getAppBeUser().getUsePhone();
+									if (JoinPushTool.getConnections().containsKey(sPhone))
+										JoinPushTool.broadcast("11" + task.getTasTitle(), sPhone);
 								} else {// 通过的的申请
-									if (!JoinPushTool.getConnections()
-											.containsKey(
-													apply2.getAppBeUser()
-															.getUsePhone())) // 用户不在线，发送短信
-										PhoneCodeTool.send(apply2
-												.getAppBeUser().getUsePhone(),
-												task.getTasTitle(), "apply");
+									if (!JoinPushTool.getConnections().containsKey(apply2.getAppBeUser().getUsePhone())) // 用户不在线，发送短信
+										PhoneCodeTool.send(apply2.getAppBeUser().getUsePhone(), task.getTasTitle(),
+												"apply");
 									else {// 用户在线，消息推送
-										String sPhone = apply2.getAppBeUser()
-												.getUsePhone();
-										JoinPushTool.broadcast(
-												"12" + task.getTasTitle(),
-												sPhone);
+										String sPhone = apply2.getAppBeUser().getUsePhone();
+										JoinPushTool.broadcast("12" + task.getTasTitle(), sPhone);
 									}
 								}
 							}
@@ -599,12 +536,10 @@ public final class TaskAction extends AbstractObjAction {
 						// 消息推送发布者
 						String sPhone = task.getTasUser().getUsePhone();
 						if (JoinPushTool.getConnections().containsKey(sPhone))
-							JoinPushTool.broadcast("01" + task.getTasTitle(),
-									sPhone);
+							JoinPushTool.broadcast("01" + task.getTasTitle(), sPhone);
 
 						return "success";
-					} else if (task.getTasReceivenum().intValue() < task
-							.getTasRulenum().intValue() - 1) {// 任务人数未达齐
+					} else if (task.getTasReceivenum().intValue() < task.getTasRulenum().intValue() - 1) {// 任务人数未达齐
 						apply.setAppState(1);// 通过
 						giveDaoInstance().update(apply);
 
@@ -620,8 +555,7 @@ public final class TaskAction extends AbstractObjAction {
 						// 消息推送接受者 任务未开始，只通知本申请的接受者
 						String sPhone = apply.getAppBeUser().getUsePhone();
 						if (JoinPushTool.getConnections().containsKey(sPhone))
-							JoinPushTool.broadcast("10" + task.getTasTitle(),
-									sPhone);
+							JoinPushTool.broadcast("10" + task.getTasTitle(), sPhone);
 
 						return "success";
 					} else {
@@ -647,12 +581,12 @@ public final class TaskAction extends AbstractObjAction {
 	public String checkFalseTask() {
 
 		Object object = giveDaoInstance().getObjectById(Apply.class, appId);// 获取申请
-		Apply apply = object != null && object instanceof Apply ? (Apply) object
-				: null;
-		Task task = apply.getAppTask();// 获取任务
+		Apply apply = object != null && object instanceof Apply ? (Apply) object : null;
+		if (apply != null) {
 
-		if (task != null && task.getTasState() == 1) {// 如果任务为被申请状态
-			if (apply != null) {
+			Task task = apply.getAppTask();// 获取任务
+
+			if (task != null && task.getTasState() == 1) {// 如果任务为被申请状态
 				apply.setAppState(2);// 设置申请为不通过状态
 				giveDaoInstance().update(apply);
 				setsCode("1");
@@ -664,11 +598,11 @@ public final class TaskAction extends AbstractObjAction {
 
 				return "success";
 			} else {
-				setsCode("13");// 申请记录不存在
+				setsCode("9");// 任务不存在
 				return "success";
 			}
 		} else {
-			setsCode("9");// 任务不存在
+			setsCode("13");// 申请记录不存在
 			return "success";
 		}
 	}
@@ -680,13 +614,11 @@ public final class TaskAction extends AbstractObjAction {
 	 */
 	public String finishTask() {
 
-		Object object1 = ServletActionContext.getRequest().getSession()
-				.getAttribute("Users");// 将登陆用户取出
+		Object object1 = ServletActionContext.getRequest().getSession().getAttribute("Users");// 将登陆用户取出
 		Users user = object1 != null ? (Users) object1 : null;
 
 		Object object = giveDaoInstance().getObjectById(Task.class, tasId);
-		Task task = object != null && object instanceof Task ? (Task) object
-				: null;
+		Task task = object != null && object instanceof Task ? (Task) object : null;
 
 		if (task != null && user != null) {
 
@@ -702,8 +634,7 @@ public final class TaskAction extends AbstractObjAction {
 			if (!"团队".equals(task.getTasType())) {// 个人任务
 
 				for (Apply apply : task.getTasApplies()) {// 申请set中肯定只有一个申请（因为是个人任务）
-					if (apply.getAppBeUser().getUseId().intValue() == user
-							.getUseId().intValue()) {// 验证登录用户是否是该任务的申请者
+					if (apply.getAppBeUser().getUseId().intValue() == user.getUseId().intValue()) {// 验证登录用户是否是该任务的申请者
 						if (apply.getAppState().intValue() == 5) {// “申请”已被申请完成
 							setsCode("14");// 已点击了申请完成，不必重新点击申请完成
 							return "success";
@@ -716,8 +647,7 @@ public final class TaskAction extends AbstractObjAction {
 					}
 				}
 
-				task.setTasFinishtime(new SimpleDateFormat(
-						"yyyy-MM-dd HH:mm:ss").format(new Date()));
+				task.setTasFinishtime(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date()));
 				task.setTasState(3);// 设置任务为提交审核状态
 				giveDaoInstance().update(task);
 				setsCode("1");// 操作成功
@@ -739,8 +669,7 @@ public final class TaskAction extends AbstractObjAction {
 			} else {// 团队任务
 
 				for (Apply apply : task.getTasApplies()) {// 申请set中可能有多个申请
-					if (apply.getAppBeUser().getUseId().intValue() == user
-							.getUseId().intValue()) {// 验证登录用户是否是该任务的申请者之一
+					if (apply.getAppBeUser().getUseId().intValue() == user.getUseId().intValue()) {// 验证登录用户是否是该任务的申请者之一
 						if (apply.getAppState().intValue() == 5) {
 							setsCode("14");// 已点击了申请完成，不必重新点击申请完成
 							return "success";
@@ -753,11 +682,9 @@ public final class TaskAction extends AbstractObjAction {
 					}
 				}
 
-				if (task.getTasFinishnum().intValue() == task.getTasRulenum()
-						.intValue() - 1) {// 任务人数已达齐，开始申请审核
+				if (task.getTasFinishnum().intValue() == task.getTasRulenum().intValue() - 1) {// 任务人数已达齐，开始申请审核
 
-					task.setTasFinishtime(new SimpleDateFormat(
-							"yyyy-MM-dd HH:mm:ss").format(new Date()));
+					task.setTasFinishtime(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date()));
 					task.setTasFinishnum(task.getTasRulenum());
 					task.setTasState(3);// 提交审核
 					giveDaoInstance().update(task);
@@ -766,11 +693,9 @@ public final class TaskAction extends AbstractObjAction {
 					// 消息推送到发布者
 					String sPhone = task.getTasUser().getUsePhone();
 					if (JoinPushTool.getConnections().containsKey(sPhone))
-						JoinPushTool.broadcast("02" + task.getTasTitle(),
-								sPhone);
+						JoinPushTool.broadcast("02" + task.getTasTitle(), sPhone);
 					else
-						PhoneCodeTool.send(task.getTasUser().getUsePhone(),
-								task.getTasTitle(), "task");// 短信提示发布者任务已完成
+						PhoneCodeTool.send(task.getTasUser().getUsePhone(), task.getTasTitle(), "task");// 短信提示发布者任务已完成
 
 					return "success";
 				} else {// 任务人数未达齐
@@ -782,8 +707,7 @@ public final class TaskAction extends AbstractObjAction {
 					// 消息推送到接受者 仅仅是该操作完成者
 					String sPhone = user.getUsePhone();
 					if (JoinPushTool.getConnections().containsKey(sPhone))
-						JoinPushTool.broadcast("13" + task.getTasTitle(),
-								sPhone);
+						JoinPushTool.broadcast("13" + task.getTasTitle(), sPhone);
 
 					return "success";
 				}
@@ -803,8 +727,7 @@ public final class TaskAction extends AbstractObjAction {
 	public String successTask() {
 
 		Object object = giveDaoInstance().getObjectById(Task.class, tasId);
-		Task task = object != null && object instanceof Task ? (Task) object
-				: null;
+		Task task = object != null && object instanceof Task ? (Task) object : null;
 
 		if (task != null && task.getTasState() == 3) {
 			Set<Apply> set = task.getTasApplies();
@@ -815,17 +738,13 @@ public final class TaskAction extends AbstractObjAction {
 				SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM");
 				// 获取任务发布者的pay
 				Pay payOut;
-				List<?> list1 = giveDaoInstance().getObjectListByfield(
-						"Pay",
-						new String[] { "payTime", "payUser" },
-						new Object[] { sdf.format(new Date()),
-								task.getTasUser() });
+				List<?> list1 = giveDaoInstance().getObjectListByfield("Pay", new String[] { "payTime", "payUser" },
+						new Object[] { sdf.format(new Date()), task.getTasUser() });
 
 				if (list1.size() > 0 && list1.get(0) instanceof Pay) {// 存在当月支付日志
 					// 支出
 					payOut = (Pay) list1.get(0);
-					payOut.setPayOut(payOut.getPayOut() + task.getTasPrice()
-							+ 0.0);
+					payOut.setPayOut(payOut.getPayOut() + task.getTasPrice() + 0.0);
 				} else {// 不存在当月支付日志
 					// 支出
 					payOut = new Pay();
@@ -844,41 +763,32 @@ public final class TaskAction extends AbstractObjAction {
 						giveDaoInstance().update(apply);
 
 						Users user = apply.getAppBeUser();
-						user.setUseRemain(user.getUseRemain()
-								+ task.getTasPrice() * (1 - SUCCESS_TAX)
-								/ set.size());// 存入余额
+						user.setUseRemain(user.getUseRemain() + task.getTasPrice() * (1 - SUCCESS_TAX) / set.size());// 存入余额
 						giveDaoInstance().update(user);
-						ServletActionContext.getRequest().getSession()
-								.setAttribute("Users", user);// 将更新用户存入session
+						ServletActionContext.getRequest().getSession().setAttribute("Users", user);// 将更新用户存入session
 
 						/** 打钱记录 */
 						Money money = new Money();
 						money.setMonAlipay(user.getUseAlipay());
 						money.setMonComment("/");
 						money.setMonName(user.getUseName());
-						money.setMonNo(new SimpleDateFormat("yyyyMMddHHmmssSSS")
-								.format(new Date())
-								+ user.getUseSno().substring(
-										user.getUseSno().length() - 4));
-						money.setMonPay(task.getTasPrice() * (1 - SUCCESS_TAX)
-								/ set.size());
+						money.setMonNo(new SimpleDateFormat("yyyyMMddHHmmssSSS").format(new Date())
+								+ user.getUseSno().substring(user.getUseSno().length() - 4));
+						money.setMonPay(task.getTasPrice() * (1 - SUCCESS_TAX) / set.size());
 						money.setMonState(3);// 打钱（不显示）
 						money.setMonPhone(user.getUsePhone());
 						money.setMonType("【任务完成】赏金");
-						money.setMonTime(new SimpleDateFormat("yyyy-MM-dd")
-								.format(new Date()));
+						money.setMonTime(new SimpleDateFormat("yyyy-MM-dd").format(new Date()));
 						giveDaoInstance().save(money);
 						/** 打钱记录结束 */
 
 						/** 能力 **/
-						List<?> list3 = giveDaoInstance().getObjectListByfield(
-								"Power", "powUser", user);// 获取任务接收者的power
+						List<?> list3 = giveDaoInstance().getObjectListByfield("Power", "powUser", user);// 获取任务接收者的power
 						Power power;
 						if (tasCredit != null && list3.size() > 0) {// 含有power数据
 							power = (Power) list3.get(0);
 							if (power.getPowCredit() + tasCredit < 790)// 如果信誉值超过790直接设置为满级
-								power.setPowCredit(power.getPowCredit()
-										+ tasCredit);
+								power.setPowCredit(power.getPowCredit() + tasCredit);
 							else
 								power.setPowCredit(790);// 满级
 						} else {// 否则新建并初始化
@@ -899,34 +809,27 @@ public final class TaskAction extends AbstractObjAction {
 
 						/** 支付日志 **/
 						Pay payIn;
-						List<?> list2 = giveDaoInstance().getObjectListByfield(
-								"Pay", new String[] { "payTime", "payUser" },
-								new Object[] { sdf.format(new Date()), user });// 获取任务收入者的pay
+						List<?> list2 = giveDaoInstance().getObjectListByfield("Pay",
+								new String[] { "payTime", "payUser" }, new Object[] { sdf.format(new Date()), user });// 获取任务收入者的pay
 
 						if (list2.size() > 0) {// 当月记录不为空
 							// 收入
 							payIn = (Pay) list2.get(0);
 							if ("团队".equals(task.getTasType()))// 团队任务，设置收入时应加上任务赏金除以人数取平均
 								payIn.setPayIn(payIn.getPayIn()
-										+ task.getTasPrice()
-										* (1 - SUCCESS_TAX)
-										/ task.getTasRulenum());
+										+ task.getTasPrice() * (1 - SUCCESS_TAX) / task.getTasRulenum());
 							else
 								payIn.setPayIn(payIn.getPayIn()// 否则直接设置加上任务赏金
-										+ task.getTasPrice()
-										* (1 - SUCCESS_TAX));
+										+ task.getTasPrice() * (1 - SUCCESS_TAX));
 						} else {// 当月记录为空
 							// 收入
 							payIn = new Pay();
 							payIn.setPayTime(sdf.format(new Date()));
 							payIn.setPayOut(0.0);
 							if (task.getTasType().equals("团队")) {
-								payIn.setPayIn(task.getTasPrice()
-										* (1 - SUCCESS_TAX)
-										/ task.getTasRulenum());
+								payIn.setPayIn(task.getTasPrice() * (1 - SUCCESS_TAX) / task.getTasRulenum());
 							} else
-								payIn.setPayIn(task.getTasPrice()
-										* (1 - SUCCESS_TAX));
+								payIn.setPayIn(task.getTasPrice() * (1 - SUCCESS_TAX));
 							payIn.setPayUser(user);
 						}
 						giveDaoInstance().saveOrUpdate(payIn);
@@ -937,8 +840,7 @@ public final class TaskAction extends AbstractObjAction {
 					// 消息推送到接受者
 					String sPhone = apply.getAppBeUser().getUsePhone();
 					if (JoinPushTool.getConnections().containsKey(sPhone))
-						JoinPushTool.broadcast("14" + task.getTasTitle(),
-								sPhone);
+						JoinPushTool.broadcast("14" + task.getTasTitle(), sPhone);
 				}
 				task.setTasState(4);// 设置任务为成功状态
 				task.setTasEvaluate(tasEvaluate);// 设置任务评价
@@ -970,8 +872,7 @@ public final class TaskAction extends AbstractObjAction {
 	public String falseTask() {
 
 		Object object = giveDaoInstance().getObjectById(Task.class, tasId);
-		Task task = object != null && object instanceof Task ? (Task) object
-				: null;
+		Task task = object != null && object instanceof Task ? (Task) object : null;
 
 		if (task != null && task.getTasState() == 3) {// 任务为审核状态
 			Set<Apply> set = task.getTasApplies();
@@ -987,8 +888,7 @@ public final class TaskAction extends AbstractObjAction {
 
 						Users beUser = apply.getAppBeUser();
 						// 获取任务接收者的power
-						List<?> list3 = giveDaoInstance().getObjectListByfield(
-								"Power", "powUser", beUser);
+						List<?> list3 = giveDaoInstance().getObjectListByfield("Power", "powUser", beUser);
 						Power power;
 						if (list3.size() > 0) {
 							power = (Power) list3.get(0);
@@ -1006,8 +906,7 @@ public final class TaskAction extends AbstractObjAction {
 					// 消息推送到接受者
 					String sPhone = apply.getAppBeUser().getUsePhone();
 					if (JoinPushTool.getConnections().containsKey(sPhone))
-						JoinPushTool.broadcast("15" + task.getTasTitle(),
-								sPhone);
+						JoinPushTool.broadcast("15" + task.getTasTitle(), sPhone);
 				}
 				/** 能力结束 **/
 
@@ -1020,27 +919,22 @@ public final class TaskAction extends AbstractObjAction {
 					task.setTasState(5);// 任务失败
 					giveDaoInstance().update(task);
 					Users user = task.getTasUser();
-					user.setUseRemain(user.getUseRemain() + task.getTasPrice()
-							* (1 - FALSE_TAX));// 存入余额
+					user.setUseRemain(user.getUseRemain() + task.getTasPrice() * (1 - FALSE_TAX));// 存入余额
 					giveDaoInstance().update(user);
-					ServletActionContext.getRequest().getSession()
-							.setAttribute("Users", user);// 将更新用户存入session
+					ServletActionContext.getRequest().getSession().setAttribute("Users", user);// 将更新用户存入session
 
 					/** 返钱记录 */
 					Money money = new Money();
 					money.setMonAlipay(user.getUseAlipay());
 					money.setMonComment("/");
 					money.setMonName(user.getUseName());
-					money.setMonNo(new SimpleDateFormat("yyyyMMddHHmmssSSS")
-							.format(new Date())
-							+ user.getUseSno().substring(
-									user.getUseSno().length() - 4));
+					money.setMonNo(new SimpleDateFormat("yyyyMMddHHmmssSSS").format(new Date())
+							+ user.getUseSno().substring(user.getUseSno().length() - 4));
 					money.setMonPay(task.getTasPrice() * (1 - FALSE_TAX));
 					money.setMonState(3);// 打钱（不显示）
 					money.setMonPhone(user.getUsePhone());
 					money.setMonType("【任务无人接受】返金");
-					money.setMonTime(new SimpleDateFormat("yyyy-MM-dd")
-							.format(new Date()));
+					money.setMonTime(new SimpleDateFormat("yyyy-MM-dd").format(new Date()));
 					giveDaoInstance().save(money);
 					/** 返钱记录结束 */
 
@@ -1049,15 +943,13 @@ public final class TaskAction extends AbstractObjAction {
 					Pay payOut;
 
 					// 获取任务发布者的pay
-					List<?> list1 = giveDaoInstance().getObjectListByfield(
-							"Pay", new String[] { "payTime", "payUser" },
+					List<?> list1 = giveDaoInstance().getObjectListByfield("Pay", new String[] { "payTime", "payUser" },
 							new Object[] { sdf.format(new Date()), user });
 
 					if (list1.size() > 0) {
 						// 支出者
 						payOut = (Pay) list1.get(0);
-						payOut.setPayOut(payOut.getPayOut()
-								+ task.getTasPrice() * FALSE_TAX);
+						payOut.setPayOut(payOut.getPayOut() + task.getTasPrice() * FALSE_TAX);
 					} else {
 						// 支出者
 						payOut = new Pay();
@@ -1099,17 +991,12 @@ public final class TaskAction extends AbstractObjAction {
 		json = giveJsonInstance();
 
 		// 获取本用户ID
-		Object obj = ServletActionContext.getRequest().getSession()
-				.getAttribute("Users");// 将登陆用户取出
+		Object obj = ServletActionContext.getRequest().getSession().getAttribute("Users");// 将登陆用户取出
 		Users user = obj != null ? (Users) obj : null;
 		int userId = user != null ? user.getUseId() : 0;// 如为0，则反馈到前台的json为空，即获取失败
 		List<?> list;
-		list = giveDaoInstance().pageListWithCond(
-				"Task",
-				curPage,
-				HOME_PerPageRow,
-				"where tasType='" + tasType
-						+ "' and  tasState in (0,1) order by tasTime desc");
+		list = giveDaoInstance().pageListWithCond("Task", curPage, HOME_PerPageRow,
+				"where tasType='" + tasType + "' and  tasState in (0,1) order by tasTime desc");
 		List<Task> taskList = new ArrayList<Task>();
 
 		if (list.size() > 0 && list.get(0) instanceof Task) {// 如果集合不为空且为Task类型
@@ -1127,8 +1014,7 @@ public final class TaskAction extends AbstractObjAction {
 						task.setAppId(apply.getAppId());// 可不传
 						if (apply.getAppState() == 0)
 							task.setState("0");// 设置游离态任务实体为发布中状态
-						if (apply.getAppState() == 1
-								&& apply.getAppTask().getTasState() == 1)
+						if (apply.getAppState() == 1 && apply.getAppTask().getTasState() == 1)
 							task.setState("1");// 设置游离态任务实体为申请中状态：“申请”已通过，但任务规定人数未达齐，仍是申请中状态（团队任务）
 					}
 				}
@@ -1149,11 +1035,9 @@ public final class TaskAction extends AbstractObjAction {
 		if (curPage == 0) {
 			int iSize;
 			iSize = giveDaoInstance().getObjectSizeBycond(
-					"select count(*) from Task where tasType='" + tasType
-							+ "' and  tasState in (0,1)");
+					"select count(*) from Task where tasType='" + tasType + "' and  tasState in (0,1)");
 			iSize = giveDaoInstance().getObjectSizeBycond(
-					"select count(*) from Task where tasType='" + tasType
-							+ "' and  tasState in (0,1)");
+					"select count(*) from Task where tasType='" + tasType + "' and  tasState in (0,1)");
 			json.put("size", iSize);
 		}
 		return "success";
@@ -1168,16 +1052,10 @@ public final class TaskAction extends AbstractObjAction {
 
 		json = giveJsonInstance();
 
-		List<?> list0 = giveDaoInstance().getObjectListBycond("Users",
-				"where useIscompany=1");
+		List<?> list0 = giveDaoInstance().getObjectListBycond("Users", "where useIscompany=1");
 
-		List<?> list = giveDaoInstance()
-				.pageListWithCond(
-						"Task",
-						curPage,
-						HOME_PerPageRow,
-						"where tasUser in(:list) and  tasState in (0,1) order by tasTime desc",
-						list0);
+		List<?> list = giveDaoInstance().pageListWithCond("Task", curPage, HOME_PerPageRow,
+				"where tasUser in(:list) and  tasState in (0,1) order by tasTime desc", list0);
 		List<Task> taskList = new ArrayList<Task>();
 		if (list.size() > 0 && list.get(0) instanceof Task) {
 			for (Object object : list) {
@@ -1196,10 +1074,8 @@ public final class TaskAction extends AbstractObjAction {
 
 		// 放入总页数
 		if (curPage == 0) {
-			int iSize = giveDaoInstance()
-					.getObjectSizeBycond(
-							"select count(*) from Task where tasUser in(:list) and  tasState in (0,1)",
-							list0);
+			int iSize = giveDaoInstance().getObjectSizeBycond(
+					"select count(*) from Task where tasUser in(:list) and  tasState in (0,1)", list0);
 			json.put("size", iSize);
 		}
 
@@ -1216,16 +1092,13 @@ public final class TaskAction extends AbstractObjAction {
 		json = giveJsonInstance();
 
 		// 获取本用户ID
-		Object obj = ServletActionContext.getRequest().getSession()
-				.getAttribute("Users");// 将登陆用户取出
+		Object obj = ServletActionContext.getRequest().getSession().getAttribute("Users");// 将登陆用户取出
 		Users user = obj != null ? (Users) obj : null;
 		int userId = user != null ? user.getUseId() : 0;// 如为0，则反馈到前台的json为空，即获取失败
 
-		String sCond = "where appBeUser=" + userId + " and appState="
-				+ tasState + " order by appId desc";
+		String sCond = "where appBeUser=" + userId + " and appState=" + tasState + " order by appId desc";
 
-		List<?> list = giveDaoInstance().pageListWithCond("Apply", curPage,
-				LOG_PerPageRow, sCond);// 取得申请
+		List<?> list = giveDaoInstance().pageListWithCond("Apply", curPage, LOG_PerPageRow, sCond);// 取得申请
 
 		List<Task> taskList = new ArrayList<Task>();
 		if (list.size() > 0 && list.get(0) instanceof Apply) {// 如果集合不为空且为Task类型
@@ -1237,8 +1110,7 @@ public final class TaskAction extends AbstractObjAction {
 				task.setAppId(apply.getAppId());
 				if (apply.getAppState() == 0)
 					task.setState("0");// 设置游离态任务实体为发布中状态
-				if (apply.getAppState() == 1
-						&& apply.getAppTask().getTasState() == 1)
+				if (apply.getAppState() == 1 && apply.getAppTask().getTasState() == 1)
 					task.setState("1");
 
 				taskList.add(task);
@@ -1255,8 +1127,7 @@ public final class TaskAction extends AbstractObjAction {
 
 		// 放入总页数
 		if (curPage == 0) {
-			int iSize = giveDaoInstance().getObjectSizeBycond(
-					"select count(*) from Apply " + sCond);
+			int iSize = giveDaoInstance().getObjectSizeBycond("select count(*) from Apply " + sCond);
 			json.put("size", iSize);
 		}
 		return "success";
@@ -1272,21 +1143,17 @@ public final class TaskAction extends AbstractObjAction {
 		json = giveJsonInstance();
 
 		// 获取本用户ID
-		Object obj = ServletActionContext.getRequest().getSession()
-				.getAttribute("Users");// 将登陆用户取出
+		Object obj = ServletActionContext.getRequest().getSession().getAttribute("Users");// 将登陆用户取出
 		Users user = obj != null ? (Users) obj : null;
 		int userId = user != null ? user.getUseId() : 0;// 如为0，则反馈到前台的json为空，即获取失败
 
 		String sCond;
 		if ("2".equals(tasState)) {// 获取进行中任务，将查询进行中和失效任务（失效不等于失败，会继续进行）
-			sCond = "where tasUser=" + userId
-					+ " and tasState in(2,6) order by tasId desc";
+			sCond = "where tasUser=" + userId + " and tasState in(2,6) order by tasId desc";
 		} else
-			sCond = "where tasUser=" + userId + " and tasState=" + tasState
-					+ " order by tasId desc";
+			sCond = "where tasUser=" + userId + " and tasState=" + tasState + " order by tasId desc";
 
-		List<?> list = giveDaoInstance().pageListWithCond("Task", curPage,
-				PERSON_PerPageRow, sCond);
+		List<?> list = giveDaoInstance().pageListWithCond("Task", curPage, PERSON_PerPageRow, sCond);
 
 		List<Task> taskList = new ArrayList<Task>();
 		if (list.size() > 0 && list.get(0) instanceof Task) {// 如果集合不为空且为Task类型
@@ -1305,8 +1172,7 @@ public final class TaskAction extends AbstractObjAction {
 
 		// 放入总页数
 		if (curPage == 0) {
-			int iSize = giveDaoInstance().getObjectSizeBycond(
-					"select count(*) from Task " + sCond);
+			int iSize = giveDaoInstance().getObjectSizeBycond("select count(*) from Task " + sCond);
 			json.put("size", iSize);
 		}
 
@@ -1327,8 +1193,7 @@ public final class TaskAction extends AbstractObjAction {
 		if (task != null && task.getTasState() == 1) {// 任务为申请中状态
 
 			String sCond = "where appTask=" + tasId + " and appState=0";
-			List<?> list = giveDaoInstance()
-					.getObjectListBycond("Apply", sCond);
+			List<?> list = giveDaoInstance().getObjectListBycond("Apply", sCond);
 
 			JSONArray jArray = new JSONArray();
 			// 去掉json多余参数
@@ -1342,10 +1207,8 @@ public final class TaskAction extends AbstractObjAction {
 			json.put("ApplyList", jArray);
 		} else {// 任务为其他状态
 
-			String sCond = "where appTask=" + tasId
-					+ " and appState in(1,3,4,5)";// 不能加入未通过的申请，因为这样的申请和任务没有半点关系
-			List<?> list = giveDaoInstance()
-					.getObjectListBycond("Apply", sCond);
+			String sCond = "where appTask=" + tasId + " and appState in(1,3,4,5)";// 不能加入未通过的申请，因为这样的申请和任务没有半点关系
+			List<?> list = giveDaoInstance().getObjectListBycond("Apply", sCond);
 
 			JSONArray jArray = new JSONArray();
 			if (list.size() > 0 && list.get(0) instanceof Apply) {// 如果集合不为空且为Task类型
@@ -1369,8 +1232,7 @@ public final class TaskAction extends AbstractObjAction {
 		// 由于前台需求，需同时调用giveTasUserByTasId与giveApplyByTasId，因而出现session was
 		// closed现象，故这里重新建立一个ObjectDaoImpl对象来解决并发问题
 		Object object = new ObjectDaoImpl().getObjectById(Task.class, tasId);
-		Task task = object != null && object instanceof Task ? (Task) object
-				: null;
+		Task task = object != null && object instanceof Task ? (Task) object : null;
 		if (task != null) {
 			json = giveJsonInstance();
 			json.put("User", task.getTasUser());
@@ -1387,23 +1249,19 @@ public final class TaskAction extends AbstractObjAction {
 
 		json = giveJsonInstance();
 
-		Object object1 = ServletActionContext.getRequest().getSession()
-				.getAttribute("Users");// 将登陆用户取出
+		Object object1 = ServletActionContext.getRequest().getSession().getAttribute("Users");// 将登陆用户取出
 		Users user = object1 != null ? (Users) object1 : null;
 
 		Object object = giveDaoInstance().getObjectById(Task.class, tasId);
-		Task task = object != null && object instanceof Task ? (Task) object
-				: null;
+		Task task = object != null && object instanceof Task ? (Task) object : null;
 
 		if (task != null) {
 			json.put("Task", task);
 			for (Apply apply : task.getTasApplies()) {
-				if (apply.getAppBeUser().getUseId().intValue() == user
-						.getUseId().intValue()) {// 自己的申请
+				if (apply.getAppBeUser().getUseId().intValue() == user.getUseId().intValue()) {// 自己的申请
 					if (apply.getAppState() == 0)
 						json.put("State", "0");// 申请中
-					if (apply.getAppState() == 1
-							&& apply.getAppTask().getTasState() == 1)
+					if (apply.getAppState() == 1 && apply.getAppTask().getTasState() == 1)
 						json.put("State", "1");// 设置游离态任务实体为申请中状态：“申请”已通过，但任务仍处于申请中，说明为团队任务：任务规定人数未达齐，仍是申请中状态
 					task.setAppId(apply.getAppId());
 				}

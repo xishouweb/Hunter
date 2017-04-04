@@ -9,11 +9,11 @@ import java.io.OutputStream;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
+import org.apache.struts2.ServletActionContext;
+
 import net.navagraha.hunter.dao.ObjectDao;
 import net.navagraha.hunter.dao.ObjectDaoImpl;
 import net.navagraha.hunter.pojo.Users;
-
-import org.apache.struts2.ServletActionContext;
 
 /**
  * 功能描述：实现上传图片功能
@@ -44,14 +44,12 @@ public class FileUploadTool {
 		String sStr = sdf.format(date);
 		try {
 			// 用时间戳命名图片
-			sFileFileName = sStr
-					+ sFileFileName.substring(sFileFileName.lastIndexOf("."));
+			sFileFileName = sStr + sFileFileName.substring(sFileFileName.lastIndexOf("."));
 			is = new FileInputStream(file);
 			if (iIsUser == 1) {// 头像
 				// 保存头像
 				ObjectDao objectDao = new ObjectDaoImpl();
-				Object object = ServletActionContext.getRequest().getSession()
-						.getAttribute("Users");// 将登陆用户取出
+				Object object = ServletActionContext.getRequest().getSession().getAttribute("Users");// 将登陆用户取出
 				Users user = object != null ? (Users) object : null;
 				sFileFileName = user.getUseSno() + sFileFileName;
 				if (user != null) {
@@ -71,12 +69,10 @@ public class FileUploadTool {
 					}
 					os.close();
 					setsCode("1");
-				} else
-					setsCode("0");
+				}
 				is.close();
 			} else {// 不是头像
-				ServletActionContext.getRequest().getSession()
-						.setAttribute("ImgPath", "upload/" + sFileFileName);
+				ServletActionContext.getRequest().getSession().setAttribute("ImgPath", "upload/" + sFileFileName);
 
 				// 得到图片保存的位置(根据root来得到图片保存的路径在Tomcat下的该工程里)
 				File destFile = new File(root, sFileFileName);
@@ -92,8 +88,7 @@ public class FileUploadTool {
 				is.close();
 
 				// 生成缩略图
-				Big2Small4PicUtil.transform(destFile.getPath(), root
-						+ "/small/" + sFileFileName, 40, 40);
+				Big2Small4PicUtil.transform(destFile.getPath(), root + "/small/" + sFileFileName, 40, 40);
 				setsCode("1");
 			}
 		} catch (Exception e) {

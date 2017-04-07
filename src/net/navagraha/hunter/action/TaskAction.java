@@ -55,7 +55,7 @@ public final class TaskAction extends AbstractObjAction {
 	private static double SUCCESS_TAX;// 成功服务费
 	private static double FALSE_TAX;// 失败服务费
 	private static int RuleReceive;// 每人限制任务数
-	// TODO 未实现发布接受规定任务数得奖励功能
+	// 未实现发布接受规定任务数得奖励功能
 	// private static int RecMoney;
 	// private static int PubMoney;
 
